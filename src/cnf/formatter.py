@@ -387,6 +387,334 @@ class NetworkTestFormatter:
         panel = Panel(text, border_style="green", box=ROUNDED)
         self.console.print(panel)
 
+    def print_mtr_results(
+        self,
+        probe_id: str,
+        probe_location: str,
+        results: List[Dict[str, Any]]
+    ):
+        """Print beautiful MTR (traceroute) results."""
+        for result in results:
+            target = result.get("name", result.get("target", "unknown"))
+            status = result.get("status", "unknown")
+
+            if status != "success" or not result.get("hops"):
+                continue
+
+            table = Table(
+                title=f"🗺️  MTR Path Analysis: {probe_id} → {target}",
+                box=ROUNDED,
+                show_header=True,
+                header_style="bold bright_cyan"
+            )
+
+            table.add_column("Hop", style="cyan", justify="right", width=4)
+            table.add_column("Host", style="white", no_wrap=True)
+            table.add_column("Loss", justify="center", width=7)
+            table.add_column("Sent", justify="center", width=5)
+            table.add_column("Avg", justify="right", width=8)
+            table.add_column("Best", justify="right", width=8)
+            table.add_column("Worst", justify="right", width=8)
+            table.add_column("StDev", justify="right", width=7)
+
+            for hop in result.get("hops", []):
+                hop_num = str(hop.get("hop", "?"))
+                host = hop.get("host", "???")
+                loss_pct = hop.get("loss_pct", 0.0)
+                sent = hop.get("packets_sent", 0)
+                avg_ms = hop.get("avg_ms", 0.0)
+                best_ms = hop.get("best_ms", 0.0)
+                worst_ms = hop.get("worst_ms", 0.0)
+                stddev_ms = hop.get("stddev_ms", 0.0)
+
+                # Color code loss
+                if loss_pct == 0:
+                    loss_str = f"[green]{loss_pct:.1f}%[/green]"
+                elif loss_pct < 5:
+                    loss_str = f"[yellow]{loss_pct:.1f}%[/yellow]"
+                else:
+                    loss_str = f"[red]{loss_pct:.1f}%[/red]"
+
+                # Highlight high latency hops
+                if avg_ms > 100:
+                    avg_str = f"[red]{avg_ms:.2f}ms[/red]"
+                elif avg_ms > 50:
+                    avg_str = f"[yellow]{avg_ms:.2f}ms[/yellow]"
+                else:
+                    avg_str = f"[green]{avg_ms:.2f}ms[/green]"
+
+                table.add_row(
+                    hop_num,
+                    host[:40],  # Truncate long hostnames
+                    loss_str,
+                    str(sent),
+                    avg_str,
+                    f"{best_ms:.2f}ms",
+                    f"{worst_ms:.2f}ms",
+                    f"{stddev_ms:.2f}ms"
+                )
+
+            self.console.print(table)
+
+            # Show summary if available
+            summary = result.get("summary", {})
+            if summary:
+                self._print_mtr_summary(summary)
+
+    def _print_mtr_summary(self, summary: Dict[str, Any]):
+        """Print MTR summary panel."""
+        path_quality = summary.get("path_quality", "unknown")
+        quality_color = {
+            "excellent": "bright_green",
+            "good": "green",
+            "acceptable": "yellow",
+            "fair": "orange3",
+            "unstable": "red",
+            "poor": "red"
+        }.get(path_quality, "white")
+
+        info_table = Table.grid(padding=(0, 2))
+        info_table.add_column(style="bold cyan", justify="right")
+        info_table.add_column(style="white")
+
+        final_hop = summary.get("final_hop", {})
+        info_table.add_row("Total Hops:", str(summary.get("total_hops", 0)))
+        info_table.add_row("Path Quality:", f"[{quality_color}]{path_quality.upper()}[/{quality_color}]")
+        info_table.add_row("Final Latency:", f"{final_hop.get('avg_ms', 0):.2f}ms")
+        info_table.add_row("Final Loss:", f"{final_hop.get('loss_pct', 0):.1f}%")
+
+        problematic = summary.get("problematic_hops", [])
+        if problematic:
+            issues_text = "\n".join([
+                f"Hop {h['hop']}: {h['issue']}" for h in problematic[:3]
+            ])
+            info_table.add_row("Issues:", f"[yellow]{issues_text}[/yellow]")
+
+        panel = Panel(
+            info_table,
+            title="📊 Path Summary",
+            border_style=quality_color,
+            box=ROUNDED
+        )
+        self.console.print(panel)
+
+    def print_http_timing_results(
+        self,
+        probe_id: str,
+        results: List[Dict[str, Any]]
+    ):
+        """Print detailed HTTP timing breakdown."""
+        for result in results:
+            if result.get("status") != "success":
+                continue
+
+            stats = result.get("statistics", {})
+            if not stats:
+                continue
+
+            url = result.get("url", "unknown")
+
+            table = Table(
+                title=f"🌐 HTTP Timing Breakdown: {url}",
+                box=ROUNDED,
+                show_header=True,
+                header_style="bold bright_magenta"
+            )
+
+            table.add_column("Phase", style="cyan")
+            table.add_column("Min", justify="right", style="bright_blue")
+            table.add_column("Avg", justify="right", style="bold bright_green")
+            table.add_column("Max", justify="right", style="bright_blue")
+            table.add_column("Median", justify="right", style="yellow")
+
+            phases = [
+                ("DNS Lookup", stats.get("dns_lookup", {})),
+                ("TCP Handshake", stats.get("tcp_handshake", {})),
+                ("TLS Handshake", stats.get("tls_handshake", {})),
+                ("Server Processing", stats.get("server_processing", {})),
+                ("Content Download", stats.get("content_download", {})),
+                ("Total Time", stats.get("total_time", {}))
+            ]
+
+            for phase_name, phase_stats in phases:
+                if not phase_stats or phase_stats.get("avg", 0) == 0:
+                    continue
+
+                table.add_row(
+                    phase_name,
+                    f"{phase_stats.get('min', 0):.2f}ms",
+                    f"{phase_stats.get('avg', 0):.2f}ms",
+                    f"{phase_stats.get('max', 0):.2f}ms",
+                    f"{phase_stats.get('median', 0):.2f}ms"
+                )
+
+            self.console.print(table)
+
+            # Additional info
+            info_grid = Table.grid(padding=(0, 2))
+            info_grid.add_column(style="bold cyan", justify="right")
+            info_grid.add_column(style="white")
+
+            info_grid.add_row("Status Code:", f"[green]{stats.get('status_code', 'N/A')}[/green]")
+            info_grid.add_row("Content Size:", f"{stats.get('content_size_kb', 0):.2f} KB")
+            info_grid.add_row("Transfer Speed:", f"{stats.get('transfer_speed_mbps', {}).get('avg', 0):.2f} Mbps")
+            info_grid.add_row("Remote IP:", stats.get('remote_ip', 'unknown'))
+            info_grid.add_row("Success Rate:", f"{stats.get('success_rate', 0) * 100:.1f}%")
+
+            panel = Panel(info_grid, title="📈 Transfer Details", border_style="blue", box=ROUNDED)
+            self.console.print(panel)
+
+    def print_packet_analysis(self, analysis: Dict[str, Any]):
+        """Print packet capture analysis results."""
+        if not analysis or analysis.get("status") != "success":
+            return
+
+        # TCP Connection Analysis
+        tcp_analysis = analysis.get("tcp_analysis", {})
+        if tcp_analysis:
+            tcp_table = Table.grid(padding=(0, 2))
+            tcp_table.add_column(style="bold cyan", justify="right")
+            tcp_table.add_column(style="white")
+
+            tcp_table.add_row("Connection Attempts:", str(tcp_analysis.get("connection_attempts", 0)))
+            tcp_table.add_row("Successful:", f"[green]{tcp_analysis.get('successful_connections', 0)}[/green]")
+            tcp_table.add_row("Success Rate:", f"{tcp_analysis.get('connection_success_rate', 0):.1f}%")
+            tcp_table.add_row("Graceful Closes:", str(tcp_analysis.get("graceful_closes", 0)))
+            tcp_table.add_row("Forced Closes (RST):", f"[yellow]{tcp_analysis.get('forced_closes', 0)}[/yellow]")
+
+            panel = Panel(tcp_table, title="🔌 TCP Connection Analysis", border_style="cyan", box=ROUNDED)
+            self.console.print(panel)
+
+        # Connection Quality
+        quality_metrics = analysis.get("connection_metrics", {})
+        if quality_metrics:
+            quality_table = Table.grid(padding=(0, 2))
+            quality_table.add_column(style="bold cyan", justify="right")
+            quality_table.add_column(style="white")
+
+            retrans = quality_metrics.get("retransmissions", 0)
+            retrans_rate = quality_metrics.get("retransmission_rate", 0)
+            quality_score = quality_metrics.get("quality_score", "unknown")
+
+            # Color code based on severity
+            if retrans_rate > 5:
+                retrans_str = f"[red]{retrans} ({retrans_rate:.2f}%)[/red]"
+            elif retrans_rate > 1:
+                retrans_str = f"[yellow]{retrans} ({retrans_rate:.2f}%)[/yellow]"
+            else:
+                retrans_str = f"[green]{retrans} ({retrans_rate:.2f}%)[/green]"
+
+            quality_table.add_row("Total Packets:", str(quality_metrics.get("total_packets", 0)))
+            quality_table.add_row("Retransmissions:", retrans_str)
+            quality_table.add_row("Duplicate ACKs:", str(quality_metrics.get("duplicate_acks", 0)))
+            quality_table.add_row("Out-of-Order:", str(quality_metrics.get("out_of_order", 0)))
+            quality_table.add_row("SACK Events:", str(quality_metrics.get("sack_events", 0)))
+            quality_table.add_row("Quality Score:", f"[bold]{quality_score.upper()}[/bold]")
+
+            quality_color = {
+                "excellent": "green",
+                "good": "green",
+                "fair": "yellow",
+                "poor": "red"
+            }.get(quality_score, "white")
+
+            panel = Panel(quality_table, title="📊 Connection Quality", border_style=quality_color, box=ROUNDED)
+            self.console.print(panel)
+
+        # Issues Detected
+        issues = analysis.get("issues_detected", [])
+        if issues:
+            self._print_packet_issues(issues)
+
+    def _print_packet_issues(self, issues: List[Dict[str, Any]]):
+        """Print detected packet-level issues."""
+        tree = Tree("⚠️  [bold yellow]Issues Detected[/bold yellow]")
+
+        for issue in issues:
+            severity = issue.get("severity", "unknown")
+            description = issue.get("description", "Unknown issue")
+            recommendation = issue.get("recommendation", "")
+
+            severity_emoji = {
+                "high": "🔴",
+                "medium": "🟡",
+                "low": "🟢"
+            }.get(severity, "⚪")
+
+            severity_color = {
+                "high": "red",
+                "medium": "yellow",
+                "low": "green"
+            }.get(severity, "white")
+
+            issue_text = f"[{severity_color}]{severity_emoji} {description}[/{severity_color}]"
+            branch = tree.add(issue_text)
+            if recommendation:
+                branch.add(f"[dim]→ {recommendation}[/dim]")
+
+        panel = Panel(tree, border_style="yellow", box=HEAVY)
+        self.console.print(panel)
+
+    def print_comprehensive_summary(self, result: Dict[str, Any]):
+        """Print comprehensive test summary combining all diagnostics."""
+        combined = result.get("combined_metrics", {})
+        if not combined:
+            return
+
+        # Overall health panel
+        health = combined.get("overall_health", "unknown")
+        health_emoji = {
+            "excellent": "🟢",
+            "good": "🟡",
+            "fair": "🟠",
+            "poor": "🔴"
+        }.get(health, "⚪")
+
+        health_color = {
+            "excellent": "bright_green",
+            "good": "green",
+            "fair": "yellow",
+            "poor": "red"
+        }.get(health, "white")
+
+        health_text = Text(f"{health_emoji} {health.upper()}", style=f"bold {health_color}", justify="center")
+        health_panel = Panel(health_text, title="Overall Health", border_style=health_color, box=HEAVY)
+        self.console.print(health_panel)
+
+        # Quality metrics
+        metrics_table = Table.grid(padding=(0, 2))
+        metrics_table.add_column(style="bold cyan", justify="right")
+        metrics_table.add_column(style="white")
+
+        metrics_table.add_row("Latency Quality:", f"[bold]{combined.get('latency_quality', 'unknown').upper()}[/bold]")
+        metrics_table.add_row("Path Quality:", f"[bold]{combined.get('path_quality', 'unknown').upper()}[/bold]")
+        metrics_table.add_row("Connection Quality:", f"[bold]{combined.get('connection_quality', 'unknown').upper()}[/bold]")
+
+        panel = Panel(metrics_table, title="📊 Quality Metrics", border_style="blue", box=ROUNDED)
+        self.console.print(panel)
+
+        # Issues summary
+        issues = combined.get("issues", [])
+        if issues:
+            self._print_comprehensive_issues(issues)
+
+    def _print_comprehensive_issues(self, issues: List[Dict[str, Any]]):
+        """Print comprehensive issues summary."""
+        high = [i for i in issues if i.get("severity") == "high"]
+        medium = [i for i in issues if i.get("severity") == "medium"]
+        low = [i for i in issues if i.get("severity") == "low"]
+
+        summary_text = Text()
+        if high:
+            summary_text.append(f"🔴 {len(high)} High  ", style="bold red")
+        if medium:
+            summary_text.append(f"🟡 {len(medium)} Medium  ", style="bold yellow")
+        if low:
+            summary_text.append(f"🟢 {len(low)} Low", style="bold green")
+
+        panel = Panel(summary_text, title=f"⚠️  Issues Summary ({len(issues)} total)", border_style="yellow", box=ROUNDED)
+        self.console.print(panel)
+
 
 # Global formatter instance
 formatter = NetworkTestFormatter()

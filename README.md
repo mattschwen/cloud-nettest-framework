@@ -74,21 +74,72 @@ Based on Oracle Object Storage network analysis (2025-10-05):
 
 ## ✨ Features
 
-### Network Tests
+### 🔬 Comprehensive Network Tests
 
-- **DNS Resolution**: Timing and accuracy testing
-- **Latency**: ICMP ping and TCP connection timing
-- **HTTP/HTTPS**: Full request timing breakdown (DNS, connect, TLS, TTFB)
-- **TLS**: Handshake timing and certificate validation
-- **Traceroute/MTR**: Network path analysis
-- **Throughput**: iperf3-based bandwidth testing
+All tests run on remote AWS probes with full packet capture and analysis:
 
-### Oracle-Specific Diagnostics
+- **ICMP Ping**: Multi-sample latency with statistical analysis
+- **MTR (My TraceRoute)**: Complete path analysis with per-hop statistics
+  - Packet loss at each hop
+  - Latency variability detection
+  - Path quality scoring
+  - Problematic hop identification
+- **HTTP/HTTPS GET**: Detailed timing breakdown across multiple samples
+  - DNS lookup timing
+  - TCP handshake duration
+  - TLS negotiation time
+  - Server processing time
+  - Content download speed
+  - Transfer rate analysis
+- **DNS Resolution**: Timing and multi-record validation
+- **TLS Handshake**: Certificate validation and timing
+- **Packet Capture**: Live tcpdump during all tests
+  - Configurable filters per test type
+  - Automatic capture management
+  - Concurrent multi-target support
+
+### 📦 Packet-Level Analysis
+
+Real-time packet analysis on AWS probes:
+
+- **TCP Connection Analysis**
+  - SYN/SYN-ACK/ACK handshake tracking
+  - Connection success rates
+  - FIN/RST termination analysis
+- **Retransmission Detection**
+  - TCP retransmission counting
+  - Duplicate ACK identification
+  - Out-of-order packet detection
+  - SACK event tracking
+- **Connection Quality Scoring**
+  - Automatic quality grading (excellent/good/fair/poor)
+  - Retransmission rate calculation
+  - Issue severity classification
+- **Performance Metrics**
+  - Window size analysis
+  - Packet size distribution
+  - Window scaling detection
+
+### 🎯 Oracle-Specific Diagnostics
 
 - **Bufferbloat Detection**: Identifies network queuing delays causing packet reordering
 - **Conntrack Monitoring**: Detects connection table exhaustion (90% read wait times)
-- **TCP Packet Analysis**: SACK events, retransmissions, out-of-order packets
 - **Problem IP Monitoring**: Tracks previously problematic endpoints (e.g., 134.70.16.1)
+  - Historical baseline comparison
+  - Improvement percentage tracking
+  - Automatic alerting on regression
+
+### 🔄 Comprehensive Test Modes
+
+- **Single Target Deep Dive**: Complete diagnostics on one endpoint
+  - Combines ping, MTR, HTTP, and packet analysis
+  - Generates unified health assessment
+  - Identifies correlated issues
+- **Multi-Target Survey**: Sequential or parallel testing across all endpoints
+- **Continuous Monitoring**: Long-term stability tracking
+  - Configurable test intervals
+  - Time-series data collection
+  - Variability analysis
 
 ### Multi-Cloud Support
 

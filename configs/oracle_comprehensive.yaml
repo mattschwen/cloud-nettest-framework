@@ -1,0 +1,184 @@
+name: oracle_comprehensive_diagnostic
+description: "Comprehensive Oracle OCI diagnostics with MTR, HTTP timing, and packet capture"
+version: "2.0"
+concurrency: 1  # Run sequentially to avoid interference
+
+# Use working AWS probes
+probes:
+  include:
+    - provider: aws
+      regions: ["us-west-1", "us-east-2"]
+      status: active
+
+# Comprehensive test configuration
+targets:
+  # DNS resolution tests
+  dns:
+    - name: objectstorage.us-ashburn-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+
+    - name: objectstorage.us-phoenix-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+
+    - name: objectstorage.us-sanjose-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+
+  # Enhanced latency tests with packet capture
+  latency:
+    # Oracle Ashburn
+    - host: 134.70.24.1
+      name: oracle_ashburn_primary
+      mode: icmp
+      count: 20
+      capture_packets: true
+      max_capture_packets: 500
+
+    # Oracle Phoenix (including problem IP)
+    - host: 134.70.16.1
+      name: oracle_phoenix_problem_ip
+      mode: icmp
+      count: 30  # More samples for historical problem IP
+      capture_packets: true
+      max_capture_packets: 800
+      alert_threshold: 100
+
+    - host: 134.70.12.1
+      name: oracle_phoenix_secondary
+      mode: icmp
+      count: 20
+      capture_packets: true
+      max_capture_packets: 500
+
+    # Oracle San Jose
+    - host: 134.70.124.2
+      name: oracle_sanjose_primary
+      mode: icmp
+      count: 20
+      capture_packets: true
+      max_capture_packets: 500
+
+  # MTR path analysis
+  mtr:
+    - host: 134.70.24.1
+      name: mtr_ashburn
+      report_cycles: 15
+      timeout: 120
+
+    - host: 134.70.16.1
+      name: mtr_phoenix_problem_ip
+      report_cycles: 20  # More cycles for problem IP
+      timeout: 150
+
+    - host: 134.70.124.2
+      name: mtr_sanjose
+      report_cycles: 15
+      timeout: 120
+
+  # Comprehensive HTTP GET tests with detailed timing
+  http:
+    - url: https://objectstorage.us-ashburn-1.oraclecloud.com
+      name: http_ashburn
+      method: GET
+      samples: 5  # Run 5 samples for statistics
+      timeout_s: 30
+      expected_status: [200, 403, 404]  # OCI may return these
+      capture_packets: true
+
+    - url: https://objectstorage.us-phoenix-1.oraclecloud.com
+      name: http_phoenix
+      method: GET
+      samples: 5
+      timeout_s: 30
+      expected_status: [200, 403, 404]
+      capture_packets: true
+
+    - url: https://objectstorage.us-sanjose-1.oraclecloud.com
+      name: http_sanjose
+      method: GET
+      samples: 5
+      timeout_s: 30
+      expected_status: [200, 403, 404]
+      capture_packets: true
+
+  # Comprehensive multi-test per target
+  comprehensive:
+    - ip: 134.70.24.1
+      url: https://objectstorage.us-ashburn-1.oraclecloud.com
+      name: ashburn_comprehensive
+      ping_count: 25
+      http_samples: 5
+      mtr_cycles: 15
+      capture_packets: true
+      max_capture_packets: 2000
+
+    - ip: 134.70.16.1
+      url: https://objectstorage.us-phoenix-1.oraclecloud.com
+      name: phoenix_comprehensive
+      ping_count: 30
+      http_samples: 5
+      mtr_cycles: 20
+      capture_packets: true
+      max_capture_packets: 2500
+
+    - ip: 134.70.124.2
+      url: https://objectstorage.us-sanjose-1.oraclecloud.com
+      name: sanjose_comprehensive
+      ping_count: 25
+      http_samples: 5
+      mtr_cycles: 15
+      capture_packets: true
+      max_capture_packets: 2000
+
+# Output configuration
+outputs:
+  formats: ["json", "md", "csv"]
+  save_raw: true
+  save_pcap: true  # Save packet captures
+  create_summary: true
+  detailed_analysis: true
+
+# Packet capture configuration
+packet_capture:
+  enabled: true
+  interface: any
+  max_file_size_mb: 100
+  analyze_after_capture: true
+  save_analysis: true
+
+# Alert thresholds
+alerts:
+  latency:
+    warn: 100
+    critical: 200
+  packet_loss:
+    warn: 1.0
+    critical: 5.0
+  retransmission_rate:
+    warn: 1.0
+    critical: 5.0
+  mtr_hop_loss:
+    warn: 2.0
+    critical: 10.0
+
+# Advanced diagnostics
+diagnostics:
+  detect_bufferbloat: true
+  analyze_tcp_flags: true
+  track_retransmissions: true
+  measure_jitter: true
+  analyze_path_mtu: false  # Requires additional tools
+
+# Problem IP monitoring
+problem_ip_tracking:
+  enabled: true
+  ips:
+    - 134.70.16.1
+  baseline_latency: 471.0  # Historical problematic latency
+  alert_if_exceeds: 100.0
+  compare_to_baseline: true
