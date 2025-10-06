@@ -17,28 +17,28 @@ def print_anubis_logo():
     
     # ANUBIS text - Bright Magenta (Pink/Purple)
     logo.append("║     ", style="bright_cyan")
-    logo.append("█████╗ ███╗   ██╗██╗   ██╗██████╗ ██╗███╗   ███╗", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
-    
+    logo.append("█████╗ ███╗   ██╗██╗   ██╗██████╗ ██╗███████╗", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
+
     logo.append("║    ", style="bright_cyan")
-    logo.append("██╔══██╗████╗  ██║██║   ██║██╔══██╗██║████╗ ████║", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
-    
+    logo.append("██╔══██╗████╗  ██║██║   ██║██╔══██╗██║██╔════╝", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
+
     logo.append("║    ", style="bright_cyan")
-    logo.append("███████║██╔██╗ ██║██║   ██║██████╔╝██║██╔████╔██║", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
-    
+    logo.append("███████║██╔██╗ ██║██║   ██║██████╔╝██║███████╗", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
+
     logo.append("║    ", style="bright_cyan")
-    logo.append("██╔══██║██║╚██╗██║██║   ██║██╔══██╗██║██║╚██╔╝██║", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
-    
+    logo.append("██╔══██║██║╚██╗██║██║   ██║██╔══██╗██║╚════██║", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
+
     logo.append("║    ", style="bright_cyan")
-    logo.append("██║  ██║██║ ╚████║╚██████╔╝██████╔╝██║██║ ╚═╝ ██║", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
-    
+    logo.append("██║  ██║██║ ╚████║╚██████╔╝██████╔╝██║███████║", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
+
     logo.append("║    ", style="bright_cyan")
-    logo.append("╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═╝╚═╝     ╚═╝", style="bold bright_magenta")
-    logo.append("                        ║\n", style="bright_cyan")
+    logo.append("╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚═╝╚══════╝", style="bold bright_magenta")
+    logo.append("                           ║\n", style="bright_cyan")
     
     logo.append("║                                                                               ║\n", style="bright_cyan")
     
