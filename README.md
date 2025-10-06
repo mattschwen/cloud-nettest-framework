@@ -16,27 +16,42 @@ Built from real-world Oracle Object Storage network analysis, this framework ena
 
 ## 🚀 Quick Start
 
+### Run Live Network Tests (Recommended)
+
+Test from **ALL 3 AWS EC2 instances** with beautiful output:
+
 ```bash
-# Clone and setup
-cd cloud-nettest-framework
+# Simple one-command test
+./run_tests
+```
+
+This executes LIVE network diagnostics:
+- ✅ **us-east-1 (Virginia)** → Oracle Ashburn
+- ✅ **us-west-1 (California)** → Oracle San Jose
+- ✅ **us-east-2 (Ohio)** → Oracle Ashburn
+
+**Output includes:**
+- 📊 Progress bars with live status
+- 🎨 Color-coded performance grades (A+ 🥇, A 🥈, B 🥉)
+- 📈 Ping statistics (latency, packet loss, jitter)
+- 🌐 HTTP timing breakdown (DNS→TCP→TLS→TTFB)
+- 📋 Beautiful tables and summary panels
+
+### Alternative: Framework CLI
+
+```bash
+# Setup (first time only)
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your SSH keys and credentials
 
 # List registered probes
 cnf registry list
 
-# Run a test plan
-cnf test run --plan configs/testplan.sample.yaml
+# Run comprehensive test plan
+cnf test run --plan configs/oracle_comprehensive.yaml
 
-# View results with beautiful formatting 🎨
+# View results with beautiful formatting
 cnf report view
-
-# Generate reports
-cnf report summarize --run runs/latest --to md,csv,json
 ```
 
 ### 🎨 Beautiful Output
