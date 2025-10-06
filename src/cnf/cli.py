@@ -149,9 +149,68 @@ def report_summarize(
     if not run_dir.exists():
         console.print(f"[red]Error: Run directory not found: {run_dir}[/red]")
         raise typer.Exit(1)
-    
+
     console.print(f"[cyan]Summarizing results from: {run_dir}[/cyan]")
     console.print(f"[yellow]Report generation functionality coming soon...[/yellow]")
+
+
+@report_app.command("view")
+def report_view(
+    run_dir: Optional[Path] = typer.Argument(None, help="Run directory to view (optional - shows live results if not provided)"),
+):
+    """View test results with beautiful formatting."""
+    from cnf.formatter import NetworkTestFormatter
+    from cnf.utils import load_json
+    import sys
+    import subprocess
+
+    formatter = NetworkTestFormatter(console)
+
+    if not run_dir:
+        # Show live test results
+        console.print("[cyan]Displaying live test results...[/cyan]\n")
+        script_path = Path(__file__).parent.parent.parent / "scripts" / "view_results.py"
+        subprocess.run([
+            sys.executable,
+            str(script_path)
+        ])
+        return
+
+    if not run_dir.exists():
+        console.print(f"[red]Error: Run directory not found: {run_dir}[/red]")
+        raise typer.Exit(1)
+
+    # Load results
+    raw_results_file = run_dir / "raw_results.json"
+    if not raw_results_file.exists():
+        console.print(f"[red]Error: Results file not found: {raw_results_file}[/red]")
+        raise typer.Exit(1)
+
+    data = load_json(raw_results_file)
+    results = data.get("results", [])
+    plan = data.get("plan", {})
+
+    # Display with beautiful formatting
+    formatter.print_header(
+        "Cloud NetTest Framework - Test Results",
+        f"Results from: {run_dir.name}"
+    )
+
+    # Show results for each probe
+    for result in results:
+        probe_id = result.get("probe_id", "unknown")
+        probe_region = result.get("region", "unknown")
+        tests = result.get("tests", {})
+
+        if "dns" in tests:
+            formatter.print_dns_results(probe_id, tests["dns"])
+            console.print()
+
+        if "latency" in tests:
+            formatter.print_latency_results(probe_id, probe_region, tests["latency"])
+            console.print()
+
+    console.print("[green]✅ Results displayed successfully[/green]")
 
 
 if __name__ == "__main__":

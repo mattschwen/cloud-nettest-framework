@@ -32,8 +32,26 @@ cnf registry list
 # Run a test plan
 cnf test run --plan configs/testplan.sample.yaml
 
-# Generate report
+# View results with beautiful formatting 🎨
+cnf report view
+
+# Generate reports
 cnf report summarize --run runs/latest --to md,csv,json
+```
+
+### 🎨 Beautiful Output
+
+The framework features stunning, colorized output with:
+- 📊 Rich tables with performance grades (A+, A, B, etc.)
+- 🎯 Color-coded metrics (green for excellent, yellow for warnings)
+- 🏆 Performance champion rankings
+- ⚠️ Problem IP monitoring with historical comparisons
+- ✅ Visual health indicators and status emojis
+- 📈 Real-time progress bars and spinners
+
+View live test results anytime:
+```bash
+cnf report view  # Shows the latest Oracle OCI test results
 ```
 
 ## 📊 Current Infrastructure

@@ -10,8 +10,10 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 
 from cnf.registry import load_registry, Host
 from cnf.utils import ensure_dir, get_timestamp, load_yaml, save_json
+from cnf.formatter import NetworkTestFormatter
 
 console = Console()
+formatter = NetworkTestFormatter(console)
 
 
 class TestRunner:
@@ -120,22 +122,113 @@ class TestRunner:
     
     async def run(self):
         """Execute the full test run."""
-        console.print(f"[cyan]Test Plan: {self.plan.get('name', 'unnamed')}[/cyan]")
-        console.print(f"[dim]{self.plan.get('description', '')}[/dim]\n")
-        
+        # Beautiful header
+        formatter.print_header(
+            "Cloud NetTest Framework - Test Execution",
+            f"Running: {self.plan.get('name', 'unnamed')}"
+        )
+
         # Select probes
         probes = self.select_probes()
-        console.print(f"[yellow]Selected {len(probes)} probe(s)[/yellow]")
-        for probe in probes:
-            console.print(f"  - {probe.id} ({probe.provider}/{probe.region})")
-        
-        # Run tests
+
+        # Show test plan info
+        formatter.print_test_plan_info(self.plan, probes)
+        console.print()
+
+        # Show probe list
+        formatter.print_probe_list(probes)
+        console.print()
+
+        # Run tests with progress
         results = await self.run_tests(probes)
-        
+
+        # Display results
+        self._display_results(results)
+
         # Save results
         await self.save_results(results)
-        
+
         return results
+
+    def _display_results(self, results: List[Dict[str, Any]]):
+        """Display test results in beautiful format."""
+        for result in results:
+            probe_id = result.get("probe_id", "unknown")
+            probe_region = result.get("region", "unknown")
+            tests = result.get("tests", {})
+
+            # DNS results
+            if "dns" in tests:
+                formatter.print_dns_results(probe_id, tests["dns"])
+                console.print()
+
+            # Latency results
+            if "latency" in tests:
+                formatter.print_latency_results(
+                    probe_id,
+                    probe_region,
+                    tests["latency"]
+                )
+                console.print()
+
+        # Calculate and show summary
+        self._display_summary(results)
+
+    def _display_summary(self, results: List[Dict[str, Any]]):
+        """Display summary statistics."""
+        total_tests = 0
+        successful_tests = 0
+        failed_tests = 0
+        total_latency = 0.0
+        latency_count = 0
+
+        for result in results:
+            tests = result.get("tests", {})
+
+            # Count latency tests
+            if "latency" in tests:
+                for lat_test in tests["latency"]:
+                    total_tests += 1
+                    if lat_test.get("packet_loss_pct", 100) < 100:
+                        successful_tests += 1
+                        total_latency += lat_test.get("avg_ms", 0)
+                        latency_count += 1
+                    else:
+                        failed_tests += 1
+
+            # Count DNS tests
+            if "dns" in tests:
+                for dns_test in tests["dns"]:
+                    total_tests += 1
+                    if dns_test.get("resolved_ips"):
+                        successful_tests += 1
+                    else:
+                        failed_tests += 1
+
+        avg_latency = total_latency / latency_count if latency_count > 0 else 0
+
+        # Determine health
+        if failed_tests == 0 and avg_latency < 50:
+            health = "EXCELLENT"
+        elif failed_tests == 0 and avg_latency < 100:
+            health = "GOOD"
+        elif failed_tests < total_tests * 0.1:
+            health = "FAIR"
+        else:
+            health = "POOR"
+
+        stats = {
+            "overall_health": health,
+            "total_tests": total_tests,
+            "successful_tests": successful_tests,
+            "failed_tests": failed_tests,
+            "avg_packet_loss": 0.0,
+            "avg_latency": avg_latency,
+            "avg_jitter": 0.0
+        }
+
+        formatter.print_summary_statistics(stats)
+        console.print()
 
 
 async def run_test_plan(plan_file: Path, output_dir: Optional[Path] = None):
