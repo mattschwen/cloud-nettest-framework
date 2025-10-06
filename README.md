@@ -52,6 +52,8 @@ Born from real-world Oracle Cloud Infrastructure troubleshooting, ANUBIS enables
 - 💠 **Packet Correlation** - TCP events mapped to HTTP timing phases
 - 🗺️ **Path Intelligence** - MTR + WHOIS for complete route analysis
 
+> **Note**: For the full cyberpunk experience with pink/purple/blue colors, run: `.venv/bin/python scripts/print_logo.py`
+
 ## 🚀 Quick Start
 
 ### One-Command Test
