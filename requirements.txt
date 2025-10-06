@@ -1,0 +1,24 @@
+# ANUBIS - Network Path Guardian
+# Core Dependencies
+
+# Terminal UI and formatting
+rich>=13.0.0
+
+# SSH connectivity
+asyncssh>=2.13.0
+
+# Configuration and data
+pyyaml>=6.0
+pydantic>=2.0.0
+
+# CLI framework
+typer>=0.9.0
+
+# DNS lookups
+dnspython>=2.3.0
+
+# Optional: Development dependencies
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# black>=23.0.0
+# mypy>=1.5.0
