@@ -26,6 +26,22 @@ def expand_path(path: str | Path) -> Path:
     return Path(path).expanduser().resolve()
 
 
+def get_config_dir() -> Path:
+    """Get the configs directory path."""
+    # Try to find configs relative to this file
+    current = Path(__file__).parent.parent.parent
+    config_dir = current / "configs"
+    if config_dir.exists():
+        return config_dir
+
+    # Fallback to current working directory
+    config_dir = Path.cwd() / "configs"
+    if config_dir.exists():
+        return config_dir
+
+    raise FileNotFoundError("Cannot find configs directory")
+
+
 def load_yaml(file_path: Path) -> Dict[str, Any]:
     """Load YAML file."""
     with open(file_path) as f:
