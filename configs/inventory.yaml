@@ -1,0 +1,82 @@
+# Cloud NetTest Framework - Host Inventory
+# Auto-populated from Oracle Object Storage network analysis
+# Last updated: 2025-10-05
+
+hosts:
+  # AWS US-East-1 (Virginia) - Oracle Ashburn optimal probe
+  - id: aws-us-east-1-probe01
+    provider: aws
+    region: us-east-1
+    hostname: probe01
+    instance_id: i-08b98d43fd53b67e4
+    public_ip: 54.87.147.228
+    private_ip: 172.31.24.2
+    ssh_user: ubuntu
+    ssh_key: ~/.ssh/id_rsa
+    notes: "Best performance to Oracle Ashburn (1.05ms latency)"
+    capabilities:
+      - icmp_ping
+      - tcp_connect
+      - https_timing
+      - traceroute
+      - mtr
+      - iperf3
+      - tcpdump
+    status: active
+    last_verified: "2025-10-05T01:15:00Z"
+
+  # AWS US-West-1 (California) - Oracle San Jose/Phoenix optimal probe
+  - id: aws-us-west-1-probe01
+    provider: aws
+    region: us-west-1
+    hostname: probe01
+    instance_id: i-03b2487f6057c504b
+    public_ip: 54.219.239.121
+    private_ip: 172.31.27.165
+    ssh_user: ubuntu
+    ssh_key: ~/.ssh/id_rsa
+    notes: "Best performance to Oracle San Jose (<1ms) and Phoenix (19ms)"
+    capabilities:
+      - icmp_ping
+      - tcp_connect
+      - https_timing
+      - traceroute
+      - mtr
+      - iperf3
+      - tcpdump
+    status: active
+    last_verified: "2025-10-05T01:15:00Z"
+
+  # AWS US-East-2 (Ohio) - Central balanced probe
+  - id: aws-us-east-2-probe01
+    provider: aws
+    region: us-east-2
+    hostname: probe01
+    instance_id: i-04b05d483c4d369c1
+    public_ip: 18.218.117.3
+    private_ip: 172.31.47.129
+    ssh_user: ubuntu
+    ssh_key: ~/.ssh/id_rsa
+    notes: "Balanced central performance, good Ashburn backup (13.8ms)"
+    capabilities:
+      - icmp_ping
+      - tcp_connect
+      - https_timing
+      - traceroute
+      - mtr
+      - iperf3
+      - tcpdump
+    status: active
+    last_verified: "2025-10-05T01:15:00Z"
+
+  # Placeholder for Azure probes (to be added)
+  # - id: azure-eastus-probe01
+  #   provider: azure
+  #   region: eastus
+  #   ssh_user: azureuser
+
+  # Placeholder for GCP probes (to be added)
+  # - id: gcp-us-east1-probe01
+  #   provider: gcp
+  #   region: us-east1
+  #   ssh_user: debian

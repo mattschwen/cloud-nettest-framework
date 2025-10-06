@@ -1,0 +1,38 @@
+# Provider-specific defaults and metadata
+defaults:
+  ssh_timeout: 10
+  ssh_user: ubuntu
+  ssh_key: ~/.ssh/id_rsa
+  connect_timeout: 5
+
+providers:
+  aws:
+    pkg_mgr: apt
+    ssh_user: ubuntu
+    common_images:
+      - "Amazon Linux 2"
+      - "Ubuntu 22.04 LTS"
+      - "Ubuntu 20.04 LTS"
+    metadata_url: http://169.254.169.254/latest/meta-data/
+    free_tier_instance: t2.micro
+    notes: "AWS free tier includes 750 hours/month of t2.micro or t3.micro"
+
+  azure:
+    pkg_mgr: apt
+    ssh_user: azureuser
+    common_images:
+      - "Ubuntu 22.04 LTS"
+      - "Ubuntu 20.04 LTS"
+    metadata_url: http://169.254.169.254/metadata/instance?api-version=2021-02-01
+    free_tier_instance: B1s
+    notes: "Azure free tier includes 750 hours/month of B1S Linux VM"
+
+  gcp:
+    pkg_mgr: apt
+    ssh_user: debian
+    common_images:
+      - "Debian 11"
+      - "Ubuntu 22.04 LTS"
+    metadata_url: http://metadata.google.internal/computeMetadata/v1/
+    free_tier_instance: e2-micro
+    notes: "GCP free tier includes e2-micro in us-west1, us-central1, or us-east1"

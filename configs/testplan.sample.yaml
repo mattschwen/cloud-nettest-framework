@@ -1,0 +1,161 @@
+# Sample Test Plan - Oracle Object Storage Comprehensive Testing
+name: oracle_object_storage_full_suite
+description: "Comprehensive network testing for Oracle OCI Object Storage from AWS probes"
+notes: "Based on Oracle network analysis findings - tests DNS, latency, TLS, HTTP, traceroute"
+version: "1.0"
+concurrency: 5
+
+# Probe selection
+probes:
+  include:
+    - provider: aws
+      regions: ["us-east-1", "us-west-1", "us-east-2"]
+      status: active
+  # limit: 3  # Optional: limit number of probes
+
+# Test targets
+targets:
+  # HTTP/HTTPS testing
+  http:
+    # Ashburn endpoint
+    - url: "https://objectstorage.us-ashburn-1.oraclecloud.com/n/<namespace>/b/<bucket>/o/<object>"
+      name: oci_ashburn_object
+      method: GET
+      retries: 2
+      timeout_s: 15
+      expected_status: [200, 404]  # 404 is normal for unauthenticated requests
+      
+    # Phoenix endpoint
+    - url: "https://objectstorage.us-phoenix-1.oraclecloud.com/n/<namespace>/b/<bucket>/o/<object>"
+      name: oci_phoenix_object
+      method: GET
+      retries: 2
+      timeout_s: 15
+      expected_status: [200, 404]
+      
+    # San Jose endpoint
+    - url: "https://objectstorage.us-sanjose-1.oraclecloud.com/n/<namespace>/b/<bucket>/o/<object>"
+      name: oci_sanjose_object
+      method: GET
+      retries: 2
+      timeout_s: 15
+      expected_status: [200, 404]
+
+  # DNS resolution testing
+  dns:
+    - name: objectstorage.us-ashburn-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+      
+    - name: objectstorage.us-phoenix-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+      
+    - name: objectstorage.us-sanjose-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+
+  # TLS handshake testing
+  tls:
+    - host: objectstorage.us-ashburn-1.oraclecloud.com
+      port: 443
+      timeout_s: 10
+      verify: true
+      
+    - host: objectstorage.us-phoenix-1.oraclecloud.com
+      port: 443
+      timeout_s: 10
+      verify: true
+      
+    - host: objectstorage.us-sanjose-1.oraclecloud.com
+      port: 443
+      timeout_s: 10
+      verify: true
+
+  # ICMP latency testing (TCP fallback if ICMP filtered)
+  latency:
+    - host: objectstorage.us-ashburn-1.oraclecloud.com
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+      
+    # Monitor the previously problematic Phoenix IP
+    - host: 134.70.16.1
+      name: phoenix_problem_ip_monitor
+      mode: icmp
+      count: 20
+      alert_threshold: 100  # Alert if >100ms (was 471ms)
+      
+    - host: objectstorage.us-phoenix-1.oraclecloud.com
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+      
+    - host: objectstorage.us-sanjose-1.oraclecloud.com
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+
+  # Traceroute/MTR for path analysis
+  traceroute:
+    - host: objectstorage.us-ashburn-1.oraclecloud.com
+      max_hops: 30
+      mode: tcp
+      port: 443
+      
+    - host: 134.70.16.1
+      name: phoenix_problem_ip_route
+      max_hops: 30
+      mode: tcp
+      port: 443
+      
+    - host: objectstorage.us-phoenix-1.oraclecloud.com
+      max_hops: 30
+      mode: tcp
+      port: 443
+
+  # Oracle-specific advanced tests
+  oci_object:
+    - endpoint: us-ashburn-1
+      test_types:
+        - dns_timing
+        - tcp_connect_timing
+        - tls_handshake_timing
+        - http_ttfb
+        - full_request_timing
+        - bufferbloat_detection
+        - packet_loss_check
+        
+    - endpoint: us-phoenix-1
+      test_types:
+        - dns_timing
+        - tcp_connect_timing
+        - tls_handshake_timing
+        - http_ttfb
+        - full_request_timing
+        - bufferbloat_detection
+        - packet_loss_check
+      monitor_ips:
+        - 134.70.16.1  # Previously problematic IP
+
+# Output configuration
+outputs:
+  formats: ["json", "csv", "md"]
+  directory: runs/{timestamp}
+  save_raw: true
+  create_summary: true
+  
+# Alert thresholds
+alerts:
+  latency:
+    warn: 150  # ms
+    critical: 200  # ms
+  packet_loss:
+    warn: 1.0  # percent
+    critical: 5.0  # percent
+  dns_resolution:
+    warn: 100  # ms
+    critical: 500  # ms

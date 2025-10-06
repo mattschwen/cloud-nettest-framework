@@ -1,0 +1,60 @@
+{
+  "schema": 1,
+  "version": "0.1.0",
+  "last_updated": "2025-10-05T01:15:00Z",
+  "providers": ["aws", "azure", "gcp"],
+  "hosts": [
+    {
+      "id": "aws-us-east-1-probe01",
+      "provider": "aws",
+      "region": "us-east-1",
+      "hostname": "probe01",
+      "instance_id": "i-08b98d43fd53b67e4",
+      "public_ip": "54.87.147.228",
+      "private_ip": "172.31.24.2",
+      "ssh_user": "ubuntu",
+      "ssh_key": "~/.ssh/id_rsa",
+      "status": "active",
+      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
+      "notes": "Oracle Ashburn optimal - 1.05ms latency"
+    },
+    {
+      "id": "aws-us-west-1-probe01",
+      "provider": "aws",
+      "region": "us-west-1",
+      "hostname": "probe01",
+      "instance_id": "i-03b2487f6057c504b",
+      "public_ip": "54.219.239.121",
+      "private_ip": "172.31.27.165",
+      "ssh_user": "ubuntu",
+      "ssh_key": "~/.ssh/id_rsa",
+      "status": "active",
+      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
+      "notes": "Oracle San Jose optimal - <1ms latency"
+    },
+    {
+      "id": "aws-us-east-2-probe01",
+      "provider": "aws",
+      "region": "us-east-2",
+      "hostname": "probe01",
+      "instance_id": "i-04b05d483c4d369c1",
+      "public_ip": "18.218.117.3",
+      "private_ip": "172.31.47.129",
+      "ssh_user": "ubuntu",
+      "ssh_key": "~/.ssh/id_rsa",
+      "status": "active",
+      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
+      "notes": "Central balanced probe - 13.8ms to Ashburn"
+    }
+  ],
+  "metadata": {
+    "total_hosts": 3,
+    "active_hosts": 3,
+    "providers_count": {
+      "aws": 3,
+      "azure": 0,
+      "gcp": 0
+    },
+    "source": "Oracle Object Storage network analysis 2025-10-05"
+  }
+}

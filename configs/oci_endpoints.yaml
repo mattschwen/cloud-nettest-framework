@@ -1,0 +1,70 @@
+# Oracle Cloud Infrastructure Object Storage Endpoints
+# Based on comprehensive network analysis conducted 2025-10-05
+# See: Oracle_Object_Storage_Network_Analysis_Report.md
+
+endpoints:
+  # Ashburn (Virginia) - Best performance from US-East-1
+  - region: us-ashburn-1
+    location: "Ashburn, Virginia, USA"
+    hostname: objectstorage.us-ashburn-1.oraclecloud.com
+    console: console.us-ashburn-1.oraclecloud.com
+    container_registry: iad.ocir.io
+    ip_addresses:
+      - 134.70.24.1
+      - 134.70.28.1
+      - 134.70.32.1
+    optimal_probe: aws-us-east-1-probe01
+    baseline_latency: 1.05ms
+    baseline_connect: 12.4ms
+    notes: "Ultra-low latency from AWS US-East-1 (1.05ms avg)"
+
+  # Phoenix (Arizona) - Best performance from US-West-1
+  - region: us-phoenix-1
+    location: "Phoenix, Arizona, USA"
+    hostname: objectstorage.us-phoenix-1.oraclecloud.com
+    console: console.us-phoenix-1.oraclecloud.com
+    ip_addresses:
+      - 134.70.8.1   # 53.9ms baseline
+      - 134.70.12.1  # 56.5ms baseline
+      - 134.70.16.1  # 59.5ms baseline (previously 471ms - RESOLVED)
+    optimal_probe: aws-us-west-1-probe01
+    baseline_latency: 19.5ms
+    baseline_connect: 93.4ms
+    notes: "Previously problematic IP 134.70.16.1 now resolved (was 471ms)"
+    monitoring:
+      watch_ip: 134.70.16.1
+      alert_threshold: 100ms
+      status: resolved
+
+  # San Jose (California) - Best performance from US-West-1
+  - region: us-sanjose-1
+    location: "San Jose, California, USA"
+    hostname: objectstorage.us-sanjose-1.oraclecloud.com
+    console: console.us-sanjose-1.oraclecloud.com
+    ip_addresses:
+      - 134.70.124.2
+    optimal_probe: aws-us-west-1-probe01
+    baseline_latency: 0.99ms
+    baseline_connect: 12.4ms
+    notes: "Best overall performance - sub-1ms latency from US-West-1"
+
+# Global endpoints
+global:
+  - service: oracle_cloud_console
+    hostname: cloud.oracle.com
+    notes: "Akamai CDN - global load balanced"
+    
+# Performance matrix (from network analysis)
+performance_matrix:
+  aws-us-east-1:
+    ashburn: "1.05ms (EXCELLENT)"
+    phoenix: "61.96ms (GOOD)"
+    sanjose: "62.34ms (GOOD)"
+  aws-us-west-1:
+    ashburn: "~63ms (GOOD)"
+    phoenix: "19.5ms (EXCELLENT)"
+    sanjose: "<1ms (EXCELLENT)"
+  aws-us-east-2:
+    ashburn: "13.8ms (EXCELLENT)"
+    phoenix: "58.8ms (GOOD)"
+    sanjose: "~51ms (GOOD)"
