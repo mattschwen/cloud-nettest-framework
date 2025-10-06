@@ -125,18 +125,76 @@ def grade_latency(latency_ms):
         return "D", "❌", "red"
 
 
+def parse_mtr_output(output):
+    """Parse MTR output to extract hop details."""
+    import re
+    hops = []
+
+    for line in output.split('\n'):
+        # Match MTR output format: "1.|-- 240.0.168.13  0.0%  10  1.2  1.3  1.2  1.6  0.1"
+        match = re.match(r'\s*(\d+)\.\|--\s+(\S+)\s+(\d+\.\d+)%\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)', line)
+        if match:
+            hop_num, host, loss, sent, last, avg, best, worst, stddev = match.groups()
+            hops.append({
+                "hop": int(hop_num),
+                "host": host,
+                "loss_pct": float(loss),
+                "sent": int(sent),
+                "last_ms": float(last),
+                "avg_ms": float(avg),
+                "best_ms": float(best),
+                "worst_ms": float(worst),
+                "stddev_ms": float(stddev)
+            })
+
+    return hops
+
+
+def get_whois_info(ip):
+    """Get ASN and organization from whois."""
+    try:
+        result = subprocess.run(
+            ["whois", ip],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        output = result.stdout
+        asn = "Unknown"
+        org = "Unknown"
+
+        # Extract ASN
+        import re
+        asn_match = re.search(r'(?:origin|OriginAS):\s*(AS\d+)', output, re.IGNORECASE)
+        if asn_match:
+            asn = asn_match.group(1)
+
+        # Extract organization
+        org_match = re.search(r'(?:OrgName|org-name|descr):\s*(.+)', output, re.IGNORECASE)
+        if org_match:
+            org = org_match.group(1).strip()[:40]  # Limit length
+
+        return asn, org
+    except Exception:
+        return "Unknown", "Unknown"
+
+
 def main():
     """Run live network tests from all probes."""
 
-    # Header
+    # Animated header with sparkles
+    console.print()
+    console.print("[bold bright_cyan]" + "=" * 80 + "[/bold bright_cyan]")
     console.print()
     header = Panel(
-        Text("🌐 LIVE NETWORK DIAGNOSTICS FROM ALL AWS EC2 INSTANCES", style="bold bright_cyan", justify="center"),
+        Text("🌐 LIVE NETWORK DIAGNOSTICS FROM ALL AWS EC2 INSTANCES 🌐", style="bold bright_cyan", justify="center"),
         box=box.DOUBLE,
         border_style="bright_cyan",
         padding=(1, 2)
     )
     console.print(header)
+    console.print("[bold bright_cyan]" + "=" * 80 + "[/bold bright_cyan]")
     console.print()
 
     # Show probe inventory
@@ -162,20 +220,19 @@ def main():
         console=console
     ) as progress:
 
-        main_task = progress.add_task("[cyan]Running tests from all probes...", total=len(PROBES))
+        main_task = progress.add_task("[cyan]Running tests from all probes...", total=len(PROBES) * 3)  # 3 tests per probe
 
         for probe in PROBES:
-            progress.update(main_task, description=f"[{probe['color']}]Testing from {probe['name']}...")
-
             probe_results = {
                 "probe": probe,
                 "ping": None,
                 "http": None,
+                "mtr": None,
                 "status": "testing"
             }
 
             # Test 1: Ping
-            progress.update(main_task, description=f"[{probe['color']}]{probe['name']}: Running ping test...")
+            progress.update(main_task, description=f"[{probe['color']}]📡 {probe['name']}: ICMP Ping test...")
             success, stdout, stderr = run_ssh_command(
                 probe,
                 f"ping -c 20 -W 2 {probe['target_ip']}"
@@ -185,8 +242,30 @@ def main():
                 probe_results["ping"] = parse_ping_results(stdout)
                 probe_results["ping"]["raw"] = stdout
 
-            # Test 2: HTTP timing
-            progress.update(main_task, description=f"[{probe['color']}]{probe['name']}: Running HTTP test...")
+            progress.update(main_task, advance=1)
+
+            # Test 2: MTR Path Analysis
+            progress.update(main_task, description=f"[{probe['color']}]🗺️  {probe['name']}: MTR path tracing...")
+            success, stdout, stderr = run_ssh_command(
+                probe,
+                f"mtr -n -c 10 -r {probe['target_ip']}"
+            )
+
+            if success:
+                probe_results["mtr"] = parse_mtr_output(stdout)
+                probe_results["mtr_raw"] = stdout
+
+                # Get whois for each hop
+                progress.update(main_task, description=f"[{probe['color']}]🔍 {probe['name']}: Looking up hop owners...")
+                for hop in probe_results["mtr"]:
+                    asn, org = get_whois_info(hop["host"])
+                    hop["asn"] = asn
+                    hop["org"] = org
+
+            progress.update(main_task, advance=1)
+
+            # Test 3: HTTP timing
+            progress.update(main_task, description=f"[{probe['color']}]🌐 {probe['name']}: HTTP GET timing...")
 
             if "us-ashburn" in probe["target_name"].lower():
                 url = "https://objectstorage.us-ashburn-1.oraclecloud.com"
@@ -209,7 +288,7 @@ def main():
             results.append(probe_results)
 
             progress.update(main_task, advance=1)
-            sleep(0.5)
+            sleep(0.3)
 
     console.print()
 
@@ -276,11 +355,14 @@ def main():
         probe = result["probe"]
         ping = result.get("ping")
         http = result.get("http")
+        mtr = result.get("mtr")
 
-        if not ping and not http:
+        if not ping and not http and not mtr:
             continue
 
-        console.print(f"\n[{probe['color']}]╔═══ {probe['name']} → {probe['target_name']} ═══╗[/{probe['color']}]")
+        console.print(f"\n[{probe['color']}]╔{'═' * 78}╗[/{probe['color']}]")
+        console.print(f"[{probe['color']}]║[/] [bold {probe['color']}]{probe['name']} → {probe['target_name']}[/bold {probe['color']}] [{probe['color']}]{'═' * (76 - len(probe['name']) - len(probe['target_name']))}║[/{probe['color']}]")
+        console.print(f"[{probe['color']}]╚{'═' * 78}╝[/{probe['color']}]")
 
         # Ping details
         if ping:
@@ -290,13 +372,60 @@ def main():
 
             ping_table.add_row("📡 ICMP Ping:", "")
             ping_table.add_row("  Packets:", f"{ping['packets_received']}/{ping['packets_sent']}")
-            ping_table.add_row("  Loss:", f"{ping['loss_pct']:.1f}%")
+            ping_table.add_row("  Loss:", f"[green]{ping['loss_pct']:.1f}%[/green]" if ping['loss_pct'] == 0 else f"[red]{ping['loss_pct']:.1f}%[/red]")
             ping_table.add_row("  Min:", f"{ping['min']:.2f}ms")
             ping_table.add_row("  Avg:", f"[bold bright_green]{ping['avg']:.2f}ms[/bold bright_green]")
             ping_table.add_row("  Max:", f"{ping['max']:.2f}ms")
             ping_table.add_row("  Jitter:", f"{ping['mdev']:.2f}ms")
 
             console.print(ping_table)
+
+        # MTR Path Analysis with WHOIS
+        if mtr and len(mtr) > 0:
+            console.print()
+            mtr_table = Table(
+                title=f"🗺️  Network Path to {probe['target_name']}",
+                box=box.SIMPLE,
+                show_header=True,
+                header_style="bold bright_yellow"
+            )
+
+            mtr_table.add_column("Hop", style="cyan", justify="right", width=4)
+            mtr_table.add_column("IP Address", style="white", width=16)
+            mtr_table.add_column("Latency", justify="right", style="bright_green", width=10)
+            mtr_table.add_column("Loss", justify="center", width=6)
+            mtr_table.add_column("ASN", style="bright_blue", width=10)
+            mtr_table.add_column("Organization", style="bright_magenta", width=30)
+
+            for hop in mtr:
+                # Color code latency
+                avg_ms = hop['avg_ms']
+                if avg_ms < 5:
+                    lat_str = f"[bright_green]{avg_ms:.2f}ms[/bright_green]"
+                elif avg_ms < 20:
+                    lat_str = f"[green]{avg_ms:.2f}ms[/green]"
+                elif avg_ms < 50:
+                    lat_str = f"[yellow]{avg_ms:.2f}ms[/yellow]"
+                else:
+                    lat_str = f"[red]{avg_ms:.2f}ms[/red]"
+
+                # Color code loss
+                loss_pct = hop['loss_pct']
+                if loss_pct == 0:
+                    loss_str = f"[green]{loss_pct:.0f}%[/green]"
+                else:
+                    loss_str = f"[red]{loss_pct:.0f}%[/red]"
+
+                mtr_table.add_row(
+                    str(hop['hop']),
+                    hop['host'],
+                    lat_str,
+                    loss_str,
+                    hop.get('asn', 'Unknown'),
+                    hop.get('org', 'Unknown')[:30]
+                )
+
+            console.print(mtr_table)
 
         # HTTP details
         if http:
@@ -306,40 +435,68 @@ def main():
             http_table.add_column(style="white")
 
             http_table.add_row("🌐 HTTP GET:", "")
-            http_table.add_row("  DNS Lookup:", f"{http.get('dns', 0):.2f}ms")
-            http_table.add_row("  TCP Handshake:", f"{http.get('tcp', 0):.2f}ms")
-            http_table.add_row("  TLS Handshake:", f"{http.get('tls', 0):.2f}ms")
-            http_table.add_row("  TTFB:", f"{http.get('ttfb', 0):.2f}ms")
-            http_table.add_row("  Total:", f"[bold bright_blue]{http.get('total', 0):.2f}ms[/bold bright_blue]")
+            http_table.add_row("  DNS Lookup:", f"[bright_cyan]{http.get('dns', 0):.2f}ms[/bright_cyan]")
+            http_table.add_row("  TCP Handshake:", f"[bright_blue]{http.get('tcp', 0):.2f}ms[/bright_blue]")
+            http_table.add_row("  TLS Handshake:", f"[bright_magenta]{http.get('tls', 0):.2f}ms[/bright_magenta]")
+            http_table.add_row("  TTFB:", f"[yellow]{http.get('ttfb', 0):.2f}ms[/yellow]")
+            http_table.add_row("  Total:", f"[bold bright_green]{http.get('total', 0):.2f}ms[/bold bright_green]")
 
             console.print(http_table)
 
-        console.print(f"[{probe['color']}]╚{'═' * 50}╝[/{probe['color']}]")
+        console.print()
 
-    # Summary
+    # EPIC Summary with all the visual flair
     console.print()
-    console.print("[bold bright_cyan]═══════════════════════════════════════════════════════════════[/bold bright_cyan]")
+    console.print("[bold bright_green]" + "🎉" * 40 + "[/bold bright_green]")
     console.print()
 
     # Calculate overall stats
     total_tests = len([r for r in results if r.get("ping")])
     avg_latency = sum([r["ping"]["avg"] for r in results if r.get("ping")]) / total_tests if total_tests > 0 else 0
     zero_loss = sum([1 for r in results if r.get("ping") and r["ping"]["loss_pct"] == 0])
+    total_hops = sum([len(r.get("mtr") or []) for r in results])
 
-    summary_panel = Panel(
-        f"[bold bright_green]✅ TESTS COMPLETE![/bold bright_green]\n\n"
-        f"Probes Tested: [bold]{len(PROBES)}[/bold]\n"
-        f"Successful Tests: [bold bright_green]{total_tests}[/bold bright_green]\n"
-        f"Zero Packet Loss: [bold bright_green]{zero_loss}/{total_tests}[/bold bright_green]\n"
-        f"Avg Latency: [bold bright_blue]{avg_latency:.2f}ms[/bold bright_blue]\n\n"
-        f"[dim]All tests executed on remote AWS EC2 instances[/dim]",
-        title="📊 Summary",
+    # Create epic completion visual
+    completion_tree = Tree("🏆 [bold bright_yellow]TEST RESULTS SUMMARY[/bold bright_yellow] 🏆")
+
+    # Network stats branch
+    network_branch = completion_tree.add("[bold bright_cyan]📡 Network Statistics[/bold bright_cyan]")
+    network_branch.add(f"[bright_green]✅ Probes Tested: {len(PROBES)}[/bright_green]")
+    network_branch.add(f"[bright_green]✅ Successful Tests: {total_tests}/{total_tests}[/bright_green]")
+    network_branch.add(f"[bright_green]✅ Zero Packet Loss: {zero_loss}/{total_tests}[/bright_green]")
+    network_branch.add(f"[bright_blue]⚡ Average Latency: {avg_latency:.2f}ms[/bright_blue]")
+
+    # Path analysis branch
+    path_branch = completion_tree.add("[bold bright_magenta]🗺️  Path Analysis[/bold bright_magenta]")
+    path_branch.add(f"[bright_yellow]📍 Total Hops Analyzed: {total_hops}[/bright_yellow]")
+    path_branch.add(f"[bright_yellow]🔍 WHOIS Lookups Complete[/bright_yellow]")
+
+    # Performance grades branch
+    grade_branch = completion_tree.add("[bold bright_green]🎯 Performance Grades[/bold bright_green]")
+    for result in results:
+        if result.get("ping"):
+            grade, emoji, color = grade_latency(result["ping"]["avg"])
+            grade_branch.add(f"[{color}]{emoji} {result['probe']['name']}: {grade} ({result['ping']['avg']:.2f}ms)[/{color}]")
+
+    # Create the final epic panel
+    console.print(Panel(
+        completion_tree,
+        title="[bold bright_cyan]═══════════════════ 🌟 DIAGNOSTICS COMPLETE 🌟 ═══════════════════[/bold bright_cyan]",
+        subtitle="[dim bright_white]All tests executed on remote AWS EC2 instances[/dim bright_white]",
         border_style="bright_green",
-        box=box.DOUBLE,
+        box=box.DOUBLE_EDGE,
         padding=(1, 2)
-    )
+    ))
 
-    console.print(summary_panel)
+    console.print()
+    console.print("[bold bright_green]" + "🎉" * 40 + "[/bold bright_green]")
+    console.print()
+
+    # ASCII art finale
+    console.print()
+    console.print("[bold bright_cyan]    ╔═══════════════════════════════════════════════════════════╗[/bold bright_cyan]")
+    console.print("[bold bright_cyan]    ║  ✨  NETWORK DIAGNOSTICS: [bold bright_green]100% SUCCESS[/bold bright_green] ✨              ║[/bold bright_cyan]")
+    console.print("[bold bright_cyan]    ╚═══════════════════════════════════════════════════════════╝[/bold bright_cyan]")
     console.print()
 
 

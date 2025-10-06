@@ -1,174 +1,198 @@
-# Cloud NetTest Framework
+# ANUBIS 🔷
+## Network Path Guardian - Multi-Cloud Diagnostics Suite
 
-> **Multi-cloud network testing framework for Oracle Cloud Infrastructure Object Storage**
+<div align="center">
 
-A production-ready Python framework for orchestrating comprehensive network tests from persistent free-tier probe nodes across AWS, Azure, and GCP, targeting Oracle Cloud Infrastructure (OCI) Object Storage endpoints.
+```
+     ___      .__   __.  __    __  .______    __       _______.
+    /   \     |  \ |  | |  |  |  | |   _  \  |  |     /       |
+   /  ^  \    |   \|  | |  |  |  | |  |_)  | |  |    |   (----`
+  /  /_\  \   |  . `  | |  |  |  | |   _  <  |  |     \   \
+ /  _____  \  |  |\   | |  `--'  | |  |_)  | |  | .----)   |
+/__/     \__\ |__| \__|  \______/  |______/  |__| |_______/
+```
 
-## 🎯 Purpose
+**🌐 Egyptian God of Pathfinding | Cyberpunk Network Diagnostics 🌐**
 
-Built from real-world Oracle Object Storage network analysis, this framework enables:
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Network Tests](https://img.shields.io/badge/tests-21%20endpoints-brightgreen)](.)
 
-- **Reproducible network testing** across multiple cloud providers
-- **Oracle OCI Object Storage** performance monitoring and diagnostics
-- **Advanced diagnostics** including bufferbloat detection and conntrack monitoring
-- **Multi-region orchestration** from a single control point
-- **Persistent probe infrastructure** using cloud free-tier resources
+*Multi-cloud network testing framework with full L3→L4→L7 correlation and packet-level analysis*
+
+[Quick Start](#-quick-start) • [Features](#-features) • [Documentation](#-documentation) • [Contributing](#-contributing)
+
+</div>
+
+---
+
+## 🎯 What is ANUBIS?
+
+**ANUBIS** (inspired by the Egyptian god who guides souls through the underworld) is a production-ready network diagnostics framework that guides you through every layer of your network infrastructure. Like its namesake, ANUBIS sees what's hidden and illuminates the path through complex network topologies.
+
+### Why ANUBIS?
+
+Born from real-world Oracle Cloud Infrastructure troubleshooting, ANUBIS enables:
+
+- 🌐 **Multi-Cloud Testing** - AWS, Azure, GCP probe deployment
+- 🔬 **Full Stack Analysis** - L3 (ICMP/MTR) → L4 (TCP) → L7 (HTTP) correlation
+- 📊 **Beautiful Output** - Cyberpunk-themed, colorized terminal displays
+- 🎯 **Oracle OCI Focus** - Specialized tests for Oracle Object Storage
+- 💠 **Packet Correlation** - TCP events mapped to HTTP timing phases
+- 🗺️ **Path Intelligence** - MTR + WHOIS for complete route analysis
 
 ## 🚀 Quick Start
 
-### Run Live Network Tests (Recommended)
+### One-Command Test
 
-Test from **ALL 3 AWS EC2 instances** with beautiful output:
+Test **ALL Oracle OCI endpoints** from **ALL AWS probes**:
 
 ```bash
-# Simple one-command test
 ./run_tests
 ```
 
-This executes LIVE network diagnostics:
-- ✅ **us-east-1 (Virginia)** → Oracle Ashburn
-- ✅ **us-west-1 (California)** → Oracle San Jose
-- ✅ **us-east-2 (Ohio)** → Oracle Ashburn
+This executes comprehensive diagnostics:
+- ✅ 3 AWS EC2 probes (Virginia, California, Ohio)
+- ✅ 7 Oracle endpoints (Ashburn, Phoenix, San Jose)
+- ✅ ICMP ping, MTR path analysis, HTTP timing
+- ✅ WHOIS lookup for every network hop
+- ✅ Beautiful cyberpunk-themed output
 
-**Output includes:**
-- 📊 Progress bars with live status
-- 🎨 Color-coded performance grades (A+ 🥇, A 🥈, B 🥉)
-- 📈 Ping statistics (latency, packet loss, jitter)
-- 🌐 HTTP timing breakdown (DNS→TCP→TLS→TTFB)
-- 📋 Beautiful tables and summary panels
-
-### Alternative: Framework CLI
-
-```bash
-# Setup (first time only)
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-
-# List registered probes
-cnf registry list
-
-# Run comprehensive test plan
-cnf test run --plan configs/oracle_comprehensive.yaml
-
-# View results with beautiful formatting
-cnf report view
+**Sample output:**
+```
+🥇 TOP 3 BEST PERFORMING ROUTES
+┌────┬───────────────────────────────────────────┬─────────┬──────┬───────┐
+│ 🥇 │ us-west-1 → San Jose (134.70.124.2)       │  0.91ms │ 0.0% │ 🥇 A+ │
+│ 🥈 │ us-east-1 → Ashburn (134.70.24.1)         │  0.95ms │ 0.0% │ 🥇 A+ │
+│ 🥉 │ us-east-2 → Ashburn (134.70.24.1)         │ 11.72ms │ 0.0% │ 🥉 B+ │
+└────┴───────────────────────────────────────────┴─────────┴──────┴───────┘
 ```
 
-### 🎨 Beautiful Output
+### Installation
 
-The framework features stunning, colorized output with:
-- 📊 Rich tables with performance grades (A+, A, B, etc.)
-- 🎯 Color-coded metrics (green for excellent, yellow for warnings)
-- 🏆 Performance champion rankings
-- ⚠️ Problem IP monitoring with historical comparisons
-- ✅ Visual health indicators and status emojis
-- 📈 Real-time progress bars and spinners
-
-View live test results anytime:
 ```bash
-cnf report view  # Shows the latest Oracle OCI test results
+# Clone repository
+git clone <your-repo-url>
+cd cloud-nettest-framework
+
+# Setup virtual environment (Python 3.11+)
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+.venv/bin/pip install rich asyncssh pyyaml pydantic typer dnspython
+
+# Verify installation
+.venv/bin/python scripts/run_comprehensive_oracle_tests.py --help
 ```
 
-## 📊 Current Infrastructure
+### Prerequisites
 
-Based on Oracle Object Storage network analysis (2025-10-05):
-
-### Active AWS Probes
-
-| Region | Instance ID | Public IP | Optimal For | Baseline Latency |
-|--------|-------------|-----------|-------------|------------------|
-| **us-east-1** | i-08b98d43fd53b67e4 | 54.87.147.228 | Oracle Ashburn | 1.05ms ⭐ |
-| **us-west-1** | i-03b2487f6057c504b | 54.219.239.121 | Oracle San Jose/Phoenix | <1ms ⭐ |
-| **us-east-2** | i-04b05d483c4d369c1 | 18.218.117.3 | Balanced/Backup | 13.8ms |
-
-### Oracle OCI Endpoints Tested
-
-- **Ashburn** (us-ashburn-1): 134.70.24.1, 134.70.28.1, 134.70.32.1
-- **Phoenix** (us-phoenix-1): 134.70.8.1, 134.70.12.1, 134.70.16.1
-- **San Jose** (us-sanjose-1): 134.70.124.2
+- Python 3.11 or higher
+- SSH access to probe nodes (AWS/Azure/GCP instances)
+- Private SSH keys for authentication
+- Network tools on probes: `ping`, `mtr`, `curl`
 
 ## ✨ Features
 
 ### 🔬 Comprehensive Network Tests
 
-All tests run on remote AWS probes with full packet capture and analysis:
+All tests execute on **remote cloud probes** with full packet capture:
 
-- **ICMP Ping**: Multi-sample latency with statistical analysis
-- **MTR (My TraceRoute)**: Complete path analysis with per-hop statistics
-  - Packet loss at each hop
-  - Latency variability detection
-  - Path quality scoring
-  - Problematic hop identification
-- **HTTP/HTTPS GET**: Detailed timing breakdown across multiple samples
-  - DNS lookup timing
-  - TCP handshake duration
-  - TLS negotiation time
-  - Server processing time
-  - Content download speed
-  - Transfer rate analysis
-- **DNS Resolution**: Timing and multi-record validation
-- **TLS Handshake**: Certificate validation and timing
-- **Packet Capture**: Live tcpdump during all tests
-  - Configurable filters per test type
-  - Automatic capture management
-  - Concurrent multi-target support
+#### ICMP Ping
+- Multi-sample latency with statistical analysis
+- Packet loss detection
+- Jitter measurement (latency variability)
 
-### 📦 Packet-Level Analysis
+#### MTR (My TraceRoute)
+- Complete path analysis with per-hop statistics
+- Packet loss at each hop
+- WHOIS lookup for ASN and organization
+- Path quality scoring
 
-Real-time packet analysis on AWS probes:
+#### HTTP/HTTPS Timing
+- DNS lookup timing
+- TCP handshake duration
+- TLS negotiation time
+- Server processing (TTFB)
+- Content download speed
+- Multi-sample statistics (min/max/avg/median)
 
-- **TCP Connection Analysis**
-  - SYN/SYN-ACK/ACK handshake tracking
-  - Connection success rates
-  - FIN/RST termination analysis
-- **Retransmission Detection**
-  - TCP retransmission counting
-  - Duplicate ACK identification
-  - Out-of-order packet detection
-  - SACK event tracking
-- **Connection Quality Scoring**
-  - Automatic quality grading (excellent/good/fair/poor)
-  - Retransmission rate calculation
-  - Issue severity classification
-- **Performance Metrics**
-  - Window size analysis
-  - Packet size distribution
-  - Window scaling detection
+#### Packet-Level Analysis
+- **TCP Connection Tracking**: SYN/SYN-ACK/ACK handshakes
+- **Retransmission Detection**: Identifies packet loss
+- **Window Size Evolution**: Tracks TCP window scaling
+- **Connection Quality Grading**: Automatic quality scores
+
+### 📦 Layered Correlation (L3→L4→L7)
+
+ANUBIS uniquely correlates network behavior across all layers:
+
+```
+Layer 3 (Network)     Layer 4 (Transport)    Layer 7 (Application)
+     ↓                        ↓                        ↓
+  ICMP Ping  ─────────→  TCP Sessions  ─────────→  HTTP Timing
+  MTR Paths  ─────────→  Retransmissions ─────→  TLS Phases
+```
+
+**Example Correlation:**
+- MTR shows 50ms path latency
+- TCP handshake takes 52ms (matches!)
+- TLS phase shows 3 retransmissions
+- **Insight**: "TCP retransmissions during TLS causing 150ms slowdown"
+
+See `docs/LAYERED_CORRELATION.md` for details.
+
+### 🎨 Beautiful Cyberpunk Output
+
+Inspired by Egyptian mythology and cyberpunk aesthetics:
+
+- 🌈 **Color-coded metrics**: Green (excellent), Yellow (warning), Red (critical)
+- 📊 **Rich tables**: Unicode box-drawing with performance grades
+- 🏆 **Rankings**: Top 3 best/worst routes automatically identified
+- 🎯 **Progress bars**: Real-time status with spinners
+- 💠 **Hierarchical trees**: Nested test results and correlations
 
 ### 🎯 Oracle-Specific Diagnostics
 
-- **Bufferbloat Detection**: Identifies network queuing delays causing packet reordering
-- **Conntrack Monitoring**: Detects connection table exhaustion (90% read wait times)
-- **Problem IP Monitoring**: Tracks previously problematic endpoints (e.g., 134.70.16.1)
-  - Historical baseline comparison
-  - Improvement percentage tracking
-  - Automatic alerting on regression
+Built from real Sev 1 incident analysis:
 
-### 🔄 Comprehensive Test Modes
+- **Bufferbloat Detection**: Identifies network queuing delays
+- **Conntrack Monitoring**: Detects connection table exhaustion
+- **Problem IP Tracking**: Monitors historically problematic endpoints (e.g., 134.70.16.1)
+- **Regional Optimization**: Tests optimal probe→endpoint pairings
 
-- **Single Target Deep Dive**: Complete diagnostics on one endpoint
-  - Combines ping, MTR, HTTP, and packet analysis
-  - Generates unified health assessment
-  - Identifies correlated issues
-- **Multi-Target Survey**: Sequential or parallel testing across all endpoints
-- **Continuous Monitoring**: Long-term stability tracking
-  - Configurable test intervals
-  - Time-series data collection
-  - Variability analysis
+### 🌐 Multi-Cloud Support
 
-### Multi-Cloud Support
+Deploy probes across cloud providers:
 
-- **AWS**: Full support with EC2 metadata integration
-- **Azure**: Ready for VM deployment (configuration included)
-- **GCP**: Ready for Compute Engine deployment (configuration included)
+- **AWS**: EC2 instances with metadata integration
+- **Azure**: VM deployment (configuration ready)
+- **GCP**: Compute Engine (configuration ready)
+
+## 📊 Current Infrastructure
+
+### Active AWS Probes
+
+| Region | Instance ID | Public IP | Optimal For | Baseline Latency |
+|--------|-------------|-----------|-------------|------------------|
+| **us-east-1** (Virginia) | i-08b98d43fd53b67e4 | 54.87.147.228 | Oracle Ashburn | 0.95ms ⭐ |
+| **us-west-1** (California) | i-03b2487f6057c504b | 3.101.64.113 | Oracle San Jose/Phoenix | 0.97ms ⭐ |
+| **us-east-2** (Ohio) | i-04b05d483c4d369c1 | 18.218.117.3 | Balanced/Backup | 11.72ms |
+
+### Oracle OCI Endpoints Tested
+
+- **Ashburn** (us-ashburn-1): 134.70.24.1, 134.70.28.1, 134.70.32.1
+- **Phoenix** (us-phoenix-1): 134.70.8.1, 134.70.12.1, 134.70.16.1 ⚠️
+- **San Jose** (us-sanjose-1): 134.70.124.2
 
 ## 📖 Documentation
 
-- [Architecture Overview](docs/ARCHITECTURE.md) - System design and components
-- [Usage Guide](docs/USAGE.md) - Detailed usage instructions
-- [Test Matrix](docs/TEST_MATRIX.md) - Available tests and parameters
-- [Provider Guide](docs/PROVIDERS.md) - Cloud provider specifics
-- [OCI Object Tests](docs/OCI_OBJECT_TESTS.md) - Oracle-specific testing
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and components
+- **[Layered Correlation](docs/LAYERED_CORRELATION.md)** - L3→L4→L7 analysis explained
+- **[Running Tests](RUNNING_TESTS.md)** - Detailed test execution guide
+- **[Contributing](CONTRIBUTING.md)** - How to contribute
+- **[Development Guide](WARP.md)** - For WARP IDE users
 
 ## 🏗️ Architecture
 
@@ -205,208 +229,117 @@ Real-time packet analysis on AWS probes:
               └──────────────────┘
 ```
 
-## 🧪 Test Plans
+## 🧪 Example Test Plans
 
-Example test plan structure:
+### Quick Demo (3 endpoints)
+
+```bash
+.venv/bin/python scripts/quick_oracle_demo.py
+```
+
+Tests 1 IP per Oracle region from all probes (~2 minutes).
+
+### Comprehensive (7 endpoints)
+
+```bash
+./run_tests
+```
+
+Tests ALL Oracle IPs from ALL probes with full MTR (~5 minutes).
+
+### Custom Test Plan
 
 ```yaml
-name: oracle_object_storage_full_suite
-description: "Comprehensive OCI Object Storage testing"
-concurrency: 5
+# configs/custom_test.yaml
+name: custom_oracle_test
+description: "Custom endpoint testing"
 
 probes:
   include:
     - provider: aws
-      regions: ["us-east-1", "us-west-1"]
-      status: active
+      regions: ["us-west-1"]
 
 targets:
-  dns:
-    - name: objectstorage.us-ashburn-1.oraclecloud.com
-      qtype: A
-      attempts: 3
-  
   latency:
-    - host: 134.70.16.1  # Previously problematic IP
-      mode: icmp
+    - host: 134.70.124.2
       count: 20
-      alert_threshold: 100  # Alert if >100ms
+  
+  mtr:
+    - host: 134.70.124.2
+      cycles: 10
   
   http:
-    - url: "https://objectstorage.us-ashburn-1.oraclecloud.com/..."
-      method: GET
-      timeout_s: 15
-      expected_status: [200, 404]
-  
-  oci_object:
-    - endpoint: us-phoenix-1
-      test_types:
-        - bufferbloat_detection
-        - packet_loss_check
-      monitor_ips:
-        - 134.70.16.1
-```
-
-## 📦 Installation
-
-### Requirements
-
-- Python 3.11+
-- SSH access to probe nodes
-- Private SSH key for authentication
-
-### Install from Source
-
-```bash
-git clone <your-repo-url>
-cd cloud-nettest-framework
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -e .
-```
-
-### Development Setup
-
-```bash
-pip install -e ".[dev]"
-pytest  # Run tests
-ruff check .  # Lint
-mypy .  # Type check
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-```bash
-# SSH Configuration
-CNF_SSH_USER=ubuntu
-CNF_SSH_KEY=~/.ssh/id_rsa
-
-# Oracle Endpoints
-OCI_ASHBURN_ENDPOINT=https://objectstorage.us-ashburn-1.oraclecloud.com
-OCI_PHOENIX_ENDPOINT=https://objectstorage.us-phoenix-1.oraclecloud.com
-
-# Thresholds
-LATENCY_WARN_THRESHOLD=150
-LATENCY_CRITICAL_THRESHOLD=200
-```
-
-### Host Registry
-
-The framework maintains a registry of all probe hosts in `configs/registry.json` and `configs/inventory.yaml`.
-
-To sync inventory to registry:
-```python
-from cnf.registry import sync_inventory_to_registry
-sync_inventory_to_registry()
+    - url: "https://objectstorage.us-sanjose-1.oraclecloud.com"
+      samples: 5
 ```
 
 ## 🎯 Use Cases
 
-### 1. Oracle Object Storage Performance Monitoring
+### 1. Oracle Object Storage Performance
 
-Monitor Oracle OCI Object Storage performance from multiple regions:
+Monitor Oracle OCI performance from multiple regions with automatic best/worst route identification.
 
-```bash
-cnf test run --plan configs/testplan.sample.yaml
-```
+### 2. Network Troubleshooting
 
-### 2. Bufferbloat Detection
-
-Detect ISP-level bufferbloat causing packet reordering:
-
-```bash
-# Test plan with bufferbloat detection
-cnf test run --plan configs/oci_bufferbloat_test.yaml
-```
+Identify where slowdowns occur:
+- L3 issues: MTR shows problematic hops
+- L4 issues: TCP retransmissions detected
+- L7 issues: HTTP phase breakdown shows TLS delays
 
 ### 3. Multi-Region Baseline
 
-Establish performance baselines across regions:
+Establish performance baselines across cloud regions for capacity planning.
 
-```bash
-cnf test run --plan configs/baseline_test.yaml --output runs/baseline-$(date +%Y%m%d)
-```
+### 4. Incident Response
 
-### 4. Problem IP Monitoring
-
-Monitor previously problematic IPs (e.g., 134.70.16.1 which showed 471ms→59ms improvement):
-
-```bash
-cnf test smoke --target 134.70.16.1
-```
-
-## 📈 Results and Reporting
-
-Test results are saved in structured formats:
-
-```
-runs/20251005-120000/
-├── raw_results.json          # Complete test data
-├── summary.md                # Human-readable summary
-├── latency_report.csv        # Latency statistics
-└── alerts.json               # Threshold violations
-```
-
-## 🔍 Advanced Diagnostics
-
-### Conntrack Table Monitoring
-
-Detects Linux conntrack table exhaustion (causes "90% read wait"):
-
-```python
-from cnf.tests.oci_object import check_conntrack_status
-result = await check_conntrack_status(host)
-# Warns if >75% full, alerts if >90%
-```
-
-### Bufferbloat Detection
-
-Identifies network queuing delays:
-
-```python
-from cnf.tests.oci_object import detect_bufferbloat
-result = await detect_bufferbloat(host, target, ping_count=100)
-# Classifies: NONE, MILD, MODERATE, SEVERE
-```
+Quickly diagnose Sev 1 network incidents with:
+- Immediate multi-region testing
+- Packet-level evidence capture
+- Historical comparison to baselines
 
 ## 🤝 Contributing
 
-This framework was built from real Oracle Object Storage network analysis. Contributions welcome:
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+- Code of Conduct
+- Development setup
+- Pull request process
+- Coding standards
 
 ## 📄 License
 
-MIT License - See LICENSE file
+MIT License - See [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-Built from comprehensive Oracle Object Storage network analysis including:
-- Multi-region AWS testing (us-east-1, us-west-1, us-east-2)
-- TCP packet capture analysis
-- MTR network path tracing
-- Real-world Sev 1 incident investigation
+**ANUBIS** was forged in the fires of real-world production incidents:
 
-Based on findings from:
+- Oracle Object Storage Sev 1 network analysis
+- Multi-region AWS EC2 testing campaigns
+- TCP packet capture deep dives
+- Real customer impact investigations
+
+Built from comprehensive analysis documented in:
 - `Oracle_Object_Storage_Network_Analysis_Report.md`
 - `Oracle_Network_Diagnostic_Report.md`
 - `Oracle_Network_Analysis_Handoff_Document.md`
 
 ## 📞 Support
 
-For issues and questions:
-- GitHub Issues: [your-repo-url]/issues
-- Documentation: `docs/` directory
+- **Issues**: [GitHub Issues](https://github.com/your-username/anubis/issues)
+- **Documentation**: `docs/` directory
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/anubis/discussions)
 
 ---
 
-**Status**: Production-ready framework with 3 active AWS probes  
-**Version**: 0.1.0  
-**Last Updated**: 2025-10-05
+<div align="center">
+
+**⚡ ANUBIS - Network Path Guardian ⚡**
+
+*Guiding you through the network underworld, one packet at a time*
+
+🔷 Egyptian Mythology Meets Cyberpunk Network Diagnostics 🔷
+
+**[Get Started](#-quick-start)** • **[View Docs](#-documentation)** • **[Contribute](#-contributing)**
+
+</div>

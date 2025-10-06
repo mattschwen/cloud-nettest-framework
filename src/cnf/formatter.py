@@ -715,6 +715,174 @@ class NetworkTestFormatter:
         panel = Panel(summary_text, title=f"⚠️  Issues Summary ({len(issues)} total)", border_style="yellow", box=ROUNDED)
         self.console.print(panel)
 
+    def print_layered_analysis(self, analysis: Dict[str, Any], probe_id: str = "unknown"):
+        """
+        Print comprehensive layered network analysis (L3→L4→L7).
+
+        Shows correlation between:
+        - Layer 3 (ICMP, MTR path)
+        - Layer 4 (TCP session)
+        - Layer 7 (HTTP performance)
+        """
+        self.console.print()
+        self.console.rule(f"[bold cyan]📊 LAYERED NETWORK ANALYSIS - {probe_id}[/bold cyan]", style="cyan")
+        self.console.print()
+
+        # Overall grade display
+        grade = analysis.get("overall_grade", "?")
+        grade_color = {
+            "A+": "bright_green",
+            "A": "green",
+            "B": "yellow",
+            "C": "orange3",
+            "D": "red",
+            "F": "red"
+        }.get(grade, "white")
+
+        grade_panel = Panel(
+            Text(f"Overall Network Grade: {grade}", style=f"bold {grade_color}", justify="center"),
+            border_style=grade_color,
+            box=HEAVY
+        )
+        self.console.print(grade_panel)
+        self.console.print()
+
+        # Layer breakdown table
+        layer_table = Table(title="🌐 Network Stack Analysis", box=ROUNDED, show_header=True, header_style="bold bright_yellow")
+        layer_table.add_column("Layer", style="cyan", width=8)
+        layer_table.add_column("Component", style="white", width=20)
+        layer_table.add_column("Quality", justify="center", width=12)
+        layer_table.add_column("Key Metrics", style="dim", width=40)
+
+        # L3 Data
+        l3 = analysis.get("layer3", {})
+        l3_quality = l3.get("quality", "unknown")
+        l3_color = {"excellent": "bright_green", "good": "green", "degraded": "red"}.get(l3_quality, "white")
+
+        icmp = l3.get("icmp_latency", {})
+        l3_metrics = f"Latency: {icmp.get('avg_ms', '?')}ms avg, {icmp.get('jitter_ms', '?')}ms jitter, {icmp.get('packet_loss_pct', '?')}% loss"
+
+        path = l3.get("path_analysis", {})
+        if path:
+            l3_metrics += f"\nPath: {path.get('hop_count', '?')} hops, Quality: {path.get('path_quality', '?')}"
+
+        layer_table.add_row(
+            "L3",
+            "Network/ICMP",
+            Text(l3_quality.upper(), style=l3_color),
+            l3_metrics
+        )
+
+        # L4 Data
+        l4 = analysis.get("layer4", {})
+        l4_quality = l4.get("quality", "unknown")
+        l4_color = {"excellent": "bright_green", "good": "green", "degraded": "red"}.get(l4_quality, "white")
+
+        tcp_qual = l4.get("tcp_quality", {})
+        conn_metrics = l4.get("connection_metrics", {})
+
+        l4_metrics = f"Score: {tcp_qual.get('quality_score', '?')}, Retrans: {tcp_qual.get('retransmission_rate', '?')}%"
+        l4_metrics += f"\nPackets: {conn_metrics.get('total_packets', '?')}, DupACK: {conn_metrics.get('duplicate_acks', '?')}, OOO: {conn_metrics.get('out_of_order', '?')}"
+
+        layer_table.add_row(
+            "L4",
+            "Transport/TCP",
+            Text(l4_quality.upper(), style=l4_color),
+            l4_metrics
+        )
+
+        # L7 Data
+        l7 = analysis.get("layer7", {})
+        l7_quality = l7.get("quality", "unknown")
+        l7_color = {"excellent": "bright_green", "good": "green", "degraded": "red"}.get(l7_quality, "white")
+
+        http_perf = l7.get("http_performance", {})
+        phase_breakdown = l7.get("phase_breakdown", {})
+
+        l7_metrics = f"Total: {http_perf.get('total_time_ms', '?')}ms"
+        if phase_breakdown:
+            l7_metrics += f"\nBreakdown: TCP {phase_breakdown.get('tcp_pct', '?')}%, TLS {phase_breakdown.get('tls_pct', '?')}%, Server {phase_breakdown.get('server_pct', '?')}%, DL {phase_breakdown.get('download_pct', '?')}%"
+
+        layer_table.add_row(
+            "L7",
+            "Application/HTTP",
+            Text(l7_quality.upper(), style=l7_color),
+            l7_metrics
+        )
+
+        self.console.print(layer_table)
+        self.console.print()
+
+        # Cross-layer correlations
+        correlations = analysis.get("correlations", {})
+        if correlations:
+            corr_tree = Tree("🔗 [bold bright_magenta]Cross-Layer Correlations[/bold bright_magenta]")
+
+            # L3→L4
+            l3_l4 = correlations.get("l3_l4", {})
+            if l3_l4:
+                l3_l4_branch = corr_tree.add("[cyan]L3 → L4 (Path affects TCP)[/cyan]")
+                l3_l4_branch.add(f"[dim]{l3_l4.get('finding', 'No correlation data')}[/dim]")
+
+            # L4→L7
+            l4_l7 = correlations.get("l4_l7", {})
+            if l4_l7:
+                l4_l7_branch = corr_tree.add("[yellow]L4 → L7 (TCP affects HTTP)[/yellow]")
+
+                # Show retransmissions by HTTP phase
+                retrans_by_phase = l4_l7.get("retransmissions_by_phase", {})
+                if retrans_by_phase:
+                    phase_branch = l4_l7_branch.add("Retransmissions per HTTP phase:")
+                    for phase, count in retrans_by_phase.items():
+                        if count > 0:
+                            phase_branch.add(f"[red]{phase}: {count} retransmissions[/red]")
+
+                # Show window evolution
+                window_evolution = l4_l7.get("window_evolution", [])
+                if window_evolution:
+                    l4_l7_branch.add(f"[dim]Window size tracked across {len(window_evolution)} events[/dim]")
+
+                total_bytes = l4_l7.get("total_bytes", 0)
+                if total_bytes:
+                    l4_l7_branch.add(f"[dim]Total bytes transferred: {total_bytes:,}[/dim]")
+
+            # End-to-end
+            e2e = correlations.get("end_to_end", {})
+            if e2e:
+                e2e_branch = corr_tree.add("[bright_green]End-to-End Summary[/bright_green]")
+                e2e_branch.add(f"[dim]{e2e.get('summary', 'No summary available')}[/dim]")
+
+            self.console.print(corr_tree)
+            self.console.print()
+
+        # Insights
+        insights = analysis.get("insights", [])
+        if insights:
+            self.console.print()
+            insights_panel = Panel(
+                Text("💡 Network Insights", style="bold bright_yellow", justify="center"),
+                border_style="bright_yellow",
+                box=DOUBLE
+            )
+            self.console.print(insights_panel)
+
+            for insight in insights:
+                severity = insight.get("severity", "info")
+                layers = insight.get("layers", "")
+                message = insight.get("message", "")
+
+                severity_emoji = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(severity, "ℹ️")
+                severity_color = {"high": "red", "medium": "yellow", "low": "green"}.get(severity, "white")
+
+                insight_text = Text()
+                insight_text.append(f"{severity_emoji} ", style=severity_color)
+                insight_text.append(f"[{layers}] ", style="cyan")
+                insight_text.append(message, style=severity_color)
+
+                self.console.print(insight_text)
+
+            self.console.print()
+
 
 # Global formatter instance
 formatter = NetworkTestFormatter()

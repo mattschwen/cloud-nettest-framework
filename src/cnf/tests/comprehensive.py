@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import Any, Dict, List, Optional
+import time
 
 from cnf.registry import Host
 from cnf.tests.latency import ping_test_remote
@@ -9,6 +10,11 @@ from cnf.tests.mtr import run_mtr_test
 from cnf.tests.http import comprehensive_http_get
 from cnf.tests.packet_capture import capture_during_test, PacketCapture
 from cnf.tests.packet_analyzer import PacketAnalyzer
+from cnf.tests.layered_correlation import (
+    correlate_tcp_to_http_phases,
+    correlate_mtr_to_tcp,
+    generate_layered_analysis
+)
 
 
 async def comprehensive_target_test(
@@ -43,8 +49,14 @@ async def comprehensive_target_test(
         "tests": {},
         "packet_analysis": None,
         "combined_metrics": {},
+        "layered_analysis": None,  # NEW: L3→L4→L7 correlation
+        "tcp_http_correlation": None,  # NEW: TCP-to-HTTP phase mapping
+        "mtr_tcp_correlation": None,  # NEW: Path-to-TCP correlation
         "status": "unknown"
     }
+
+    http_start_time = None
+    capture_file = None
 
     try:
         if capture_packets:
@@ -57,6 +69,8 @@ async def comprehensive_target_test(
                 )
 
                 if capture_start["status"] == "capturing":
+                    capture_file = capture.capture_file
+
                     # Wait for capture to initialize
                     await asyncio.sleep(1)
 
@@ -65,6 +79,8 @@ async def comprehensive_target_test(
                     result["tests"]["mtr"] = await run_mtr_test(host, target_ip, report_cycles=mtr_cycles)
 
                     if target_url:
+                        # Record HTTP start time for correlation
+                        http_start_time = time.time()
                         result["tests"]["http"] = await comprehensive_http_get(host, target_url, http_samples)
 
                     # Wait for packets to settle
@@ -78,6 +94,35 @@ async def comprehensive_target_test(
                     if capture_stop.get("packet_count", 0) > 0:
                         analyzer = PacketAnalyzer(host, capture.capture_file)
                         result["packet_analysis"] = await analyzer.analyze_full()
+
+                        # NEW: Correlate TCP packets to HTTP phases
+                        if target_url and http_start_time and result["tests"].get("http"):
+                            http_stats = result["tests"]["http"].get("statistics", {})
+                            http_phases = {
+                                "dns_ms": http_stats.get("dns_lookup", {}).get("avg", 0),
+                                "tcp_handshake_ms": http_stats.get("tcp_handshake", {}).get("avg", 0),
+                                "tls_handshake_ms": http_stats.get("tls_handshake", {}).get("avg", 0),
+                                "server_process_ms": http_stats.get("server_processing", {}).get("avg", 0),
+                                "download_ms": http_stats.get("download", {}).get("avg", 0)
+                            }
+
+                            result["tcp_http_correlation"] = await correlate_tcp_to_http_phases(
+                                host,
+                                capture.capture_file,
+                                http_start_time,
+                                http_phases
+                            )
+
+                        # NEW: Correlate MTR to TCP handshake
+                        if result["tests"].get("mtr") and result["tests"].get("http"):
+                            mtr_hops = result["tests"]["mtr"].get("hops", [])
+                            tcp_handshake_ms = http_stats.get("tcp_handshake", {}).get("avg", 0)
+
+                            result["mtr_tcp_correlation"] = await correlate_mtr_to_tcp(
+                                host,
+                                mtr_hops,
+                                tcp_handshake_ms
+                            )
 
                 else:
                     # Capture failed, run tests without it
@@ -95,8 +140,18 @@ async def comprehensive_target_test(
             if target_url:
                 result["tests"]["http"] = await comprehensive_http_get(host, target_url, http_samples)
 
-        # Generate combined metrics
+        # Generate combined metrics (legacy)
         result["combined_metrics"] = _generate_combined_metrics(result)
+
+        # NEW: Generate comprehensive layered analysis (L3→L4→L7)
+        result["layered_analysis"] = await generate_layered_analysis(
+            result["tests"].get("ping"),
+            result["tests"].get("mtr"),
+            result["tests"].get("http"),
+            result["packet_analysis"],
+            result["tcp_http_correlation"]
+        )
+
         result["status"] = "success"
 
     except Exception as e:

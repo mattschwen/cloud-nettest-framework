@@ -1,3 +1,2 @@
 #!/bin/bash
-source .venv/bin/activate
-python scripts/run_live_network_tests.py
+.venv/bin/python scripts/run_comprehensive_oracle_tests.py
