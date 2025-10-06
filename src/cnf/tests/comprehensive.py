@@ -4,7 +4,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 
 from cnf.registry import Host
-from cnf.tests.latency import ping_test
+from cnf.tests.latency import ping_test_remote
 from cnf.tests.mtr import run_mtr_test
 from cnf.tests.http import comprehensive_http_get
 from cnf.tests.packet_capture import capture_during_test, PacketCapture
@@ -61,7 +61,7 @@ async def comprehensive_target_test(
                     await asyncio.sleep(1)
 
                     # Run tests sequentially while capturing
-                    result["tests"]["ping"] = await ping_test(host, target_ip, ping_count)
+                    result["tests"]["ping"] = await ping_test_remote(host, target_ip, ping_count)
                     result["tests"]["mtr"] = await run_mtr_test(host, target_ip, report_cycles=mtr_cycles)
 
                     if target_url:
@@ -81,7 +81,7 @@ async def comprehensive_target_test(
 
                 else:
                     # Capture failed, run tests without it
-                    result["tests"]["ping"] = await ping_test(host, target_ip, ping_count)
+                    result["tests"]["ping"] = await ping_test_remote(host, target_ip, ping_count)
                     result["tests"]["mtr"] = await run_mtr_test(host, target_ip, report_cycles=mtr_cycles)
 
                     if target_url:
@@ -89,7 +89,7 @@ async def comprehensive_target_test(
 
         else:
             # Run tests without capture
-            result["tests"]["ping"] = await ping_test(host, target_ip, ping_count)
+            result["tests"]["ping"] = await ping_test_remote(host, target_ip, ping_count)
             result["tests"]["mtr"] = await run_mtr_test(host, target_ip, report_cycles=mtr_cycles)
 
             if target_url:
@@ -283,7 +283,7 @@ async def continuous_monitoring(
             }
 
             # Quick ping test
-            ping_result = await ping_test(host, target_ip, count=10)
+            ping_result = await ping_test_remote(host, target_ip, count=10)
             iteration_result["ping"] = ping_result
 
             result["iterations"].append(iteration_result)
