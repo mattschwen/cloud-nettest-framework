@@ -1,0 +1,74 @@
+name: oracle_live_diagnostic
+description: "Live Oracle OCI Object Storage test from working AWS probes"
+version: "1.0"
+concurrency: 2
+
+# Use only the 2 working probes
+probes:
+  include:
+    - provider: aws
+      regions: ["us-west-1", "us-east-2"]
+      status: active
+
+# Test Oracle endpoints
+targets:
+  # DNS resolution tests
+  dns:
+    - name: objectstorage.us-ashburn-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+    
+    - name: objectstorage.us-phoenix-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+    
+    - name: objectstorage.us-sanjose-1.oraclecloud.com
+      qtype: A
+      attempts: 3
+      timeout_s: 5
+  
+  # Latency tests
+  latency:
+    # Ashburn IPs
+    - host: 134.70.24.1
+      name: ashburn_ip1
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+    
+    # Phoenix IPs (including the previously problematic one)
+    - host: 134.70.16.1
+      name: phoenix_problem_ip
+      mode: icmp
+      count: 20
+      alert_threshold: 100
+    
+    - host: 134.70.12.1
+      name: phoenix_ip2
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+    
+    # San Jose IP
+    - host: 134.70.124.2
+      name: sanjose_ip1
+      mode: icmp
+      count: 10
+      fallback_tcp_port: 443
+
+# Output configuration
+outputs:
+  formats: ["json", "md"]
+  save_raw: true
+  create_summary: true
+
+# Alert thresholds
+alerts:
+  latency:
+    warn: 150
+    critical: 200
+  packet_loss:
+    warn: 1.0
+    critical: 5.0

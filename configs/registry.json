@@ -2,7 +2,11 @@
   "schema": 1,
   "version": "0.1.0",
   "last_updated": "2025-10-05T01:15:00Z",
-  "providers": ["aws", "azure", "gcp"],
+  "providers": [
+    "aws",
+    "azure",
+    "gcp"
+  ],
   "hosts": [
     {
       "id": "aws-us-east-1-probe01",
@@ -15,46 +19,70 @@
       "ssh_user": "ubuntu",
       "ssh_key": "~/.ssh/id_rsa",
       "status": "active",
-      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
-      "notes": "Oracle Ashburn optimal - 1.05ms latency"
+      "capabilities": [
+        "icmp_ping",
+        "tcp_connect",
+        "https_timing",
+        "traceroute",
+        "mtr",
+        "iperf3",
+        "tcpdump"
+      ],
+      "notes": "Oracle Ashburn optimal - 1.05ms latency",
+      "last_verified": null
     },
     {
       "id": "aws-us-west-1-probe01",
       "provider": "aws",
       "region": "us-west-1",
-      "hostname": "probe01",
-      "instance_id": "i-03b2487f6057c504b",
-      "public_ip": "54.219.239.121",
-      "private_ip": "172.31.27.165",
+      "hostname": "NetworkTest-USWest1",
+      "instance_id": "i-035a2165f45edc09c",
+      "public_ip": "3.101.64.113",
+      "private_ip": "172.31.23.26",
       "ssh_user": "ubuntu",
-      "ssh_key": "~/.ssh/id_rsa",
+      "ssh_key": "~/.ssh/network-testing-key-west.pem",
       "status": "active",
-      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
-      "notes": "Oracle San Jose optimal - <1ms latency"
+      "capabilities": [
+        "icmp_ping",
+        "tcp_connect",
+        "https_timing",
+        "traceroute",
+        "mtr",
+        "dig",
+        "curl"
+      ],
+      "notes": "Best performance to Oracle San Jose (<1ms) and Phoenix (19ms)",
+      "last_verified": "2025-10-05T20:00:00Z"
     },
     {
       "id": "aws-us-east-2-probe01",
       "provider": "aws",
       "region": "us-east-2",
-      "hostname": "probe01",
-      "instance_id": "i-04b05d483c4d369c1",
-      "public_ip": "18.218.117.3",
-      "private_ip": "172.31.47.129",
+      "hostname": "NetworkTest-USEast2",
+      "instance_id": "i-0dfc6bdd6a24ca82e",
+      "public_ip": "18.222.238.187",
+      "private_ip": "172.31.44.171",
       "ssh_user": "ubuntu",
-      "ssh_key": "~/.ssh/id_rsa",
+      "ssh_key": "~/.ssh/network-testing-key-east2.pem",
       "status": "active",
-      "capabilities": ["icmp_ping", "tcp_connect", "https_timing", "traceroute", "mtr", "iperf3", "tcpdump"],
-      "notes": "Central balanced probe - 13.8ms to Ashburn"
+      "capabilities": [
+        "icmp_ping",
+        "tcp_connect",
+        "https_timing",
+        "traceroute",
+        "mtr",
+        "dig",
+        "curl"
+      ],
+      "notes": "Balanced central performance, good Ashburn backup (13.8ms)",
+      "last_verified": "2025-10-05T20:00:00Z"
     }
   ],
   "metadata": {
     "total_hosts": 3,
     "active_hosts": 3,
     "providers_count": {
-      "aws": 3,
-      "azure": 0,
-      "gcp": 0
-    },
-    "source": "Oracle Object Storage network analysis 2025-10-05"
+      "aws": 3
+    }
   }
 }
